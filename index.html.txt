@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estilo Fusion</title>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f5f5f5;
+}
+
+header{
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:50px 20px;
+}
+
+header img{
+  width:180px;
+  margin-bottom:10px;
+}
+
+h1{
+  margin:0;
+  font-size:30px;
+}
+
+.btn{
+  display:inline-block;
+  margin-top:15px;
+  background:#a67c52;
+  color:white;
+  padding:12px 20px;
+  border-radius:8px;
+  text-decoration:none;
+}
+
+.servicios{
+  padding:30px;
+  text-align:center;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:15px;
+  margin-top:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  font-weight:bold;
+}
+
+.catalogo{
+  background:black;
+  color:white;
+}
+
+footer{
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="logo.png">
+  <h1>ESTILO FUSION</h1>
+  <p>Metal • Madera • PVC</p>
+
+  <a href="https://wa.me/50495593891" target="_blank" class="btn">
+    Cotizar por WhatsApp
+  </a>
+</header>
+
+<section class="servicios">
+  <h2>Nuestros Servicios</h2>
+
+  <div class="grid">
+
+    <div class="card">Barandales</div>
+    <div class="card">Balcones</div>
+    <div class="card">Portones</div>
+    <div class="card">Estructuras metálicas</div>
+    <div class="card">Muebles metal + madera</div>
+    <div class="card">Ventanas PVC</div>
+    <div class="card">Puertas PVC</div>
+
+    <!-- NUEVOS -->
+    <div class="card">Instalación eléctrica ⚡</div>
+    <div class="card">Aires acondicionados ❄️</div>
+    <div class="card">Pintura de casas 🎨</div>
+
+    <!-- BOTÓN -->
+    <a href="catalogo.html">
+      <div class="card catalogo">Ver Catálogo</div>
+    </a>
+
+  </div>
+</section>
+
+<footer>
+  © Estilo Fusion | Honduras
+</footer>
+
+</body>
+</html>
