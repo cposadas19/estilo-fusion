@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FyC Solution PRO</title>
+
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:15px; }
+.card { background:#1e293b; padding:12px; border-radius:10px; margin-top:10px; }
+input, select { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:none; }
+button { width:100%; padding:12px; background:#22c55e; color:black; font-weight:bold; border:none; border-radius:8px; }
+.result { background:#111827; padding:10px; border-radius:8px; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<h2>FyC Solution - Optimización PRO</h2>
+
+<div class="card">
+<h3>Agregar Verja</h3>
+<input id="ancho" placeholder="Ancho (cm)">
+<input id="alto" placeholder="Alto (cm)">
+<input id="sep" placeholder="Separación barrotes (cm)">
+<input id="tuboMarco" placeholder='Marco (ej: 2", 2x1)'>
+<button onclick="agregarVerja()">Agregar</button>
+</div>
+
+<div class="card">
+<h3>Optimización</h3>
+<button onclick="optimizar()">Calcular cortes</button>
+</div>
+
+<div class="card">
+<h3>Resultado</h3>
+<div id="res" class="result"></div>
+</div>
+
+<script>
+
+let verjas = [];
+
+function extraerPulgadas(texto){
+texto = texto.toLowerCase();
+
+if(texto.includes("/")){
+let partes = texto.match(/(\d+)\/(\d+)/);
+return partes ? partes[1]/partes[2] : 1;
+}
+
+if(texto.includes("x")){
+let partes = texto.split("x");
+return Math.max(parseFloat(partes[0]), parseFloat(partes[1]));
+}
+
+let n = texto.match(/[\d.]+/);
+return n ? parseFloat(n[0]) : 1;
+}
+
+function pulgadasACm(p){
+return p * 2.54;
+}
+
+function agregarVerja(){
+
+let ancho = parseFloat(ancho.value);
+let alto = parseFloat(alto.value);
+let sep = parseFloat(sep.value);
+let tuboTexto = tuboMarco.value;
+
+let pulg = extraerPulgadas(tuboTexto);
+let tubo = pulgadasACm(pulg);
+
+let espacios = Math.floor(ancho / sep);
+if(espacios < 1) espacios = 1;
+
+let barrotes = espacios + 1;
+let altoBarrote = alto - (tubo * 2);
+
+let piezas = [];
+
+// marco (4 piezas)
+piezas.push(ancho, ancho, alto, alto);
+
+// barrotes
+for(let i=0;i<barrotes;i++){
+piezas.push(altoBarrote);
+}
+
+verjas.push(piezas);
+
+alert("Verja agregada");
+}
+
+function optimizar(){
+
+let piezas = [];
+
+// juntar todas
+verjas.forEach(v => piezas = piezas.concat(v));
+
+// ordenar mayor a menor
+piezas.sort((a,b)=>b-a);
+
+let tubos = [];
+
+piezas.forEach(p => {
+
+let colocado = false;
+
+for(let t of tubos){
+if(t.usado + p <= 600){
+t.usado += p;
+t.piezas.push(p);
+colocado = true;
+break;
+}
+}
+
+if(!colocado){
+tubos.push({usado:p, piezas:[p]});
+}
+
+});
+
+let resultado = `Tubos necesarios: ${tubos.length}<br><br>`;
+
+let sobranteTotal = 0;
+
+tubos.forEach((t,i)=>{
+let sobrante = 600 - t.usado;
+sobranteTotal += sobrante;
+
+resultado += `
+Tubo ${i+1}:<br>
+Usado: ${t.usado.toFixed(0)} cm<br>
+Sobrante: ${sobrante.toFixed(0)} cm<br>
+Piezas: ${t.piezas.map(p=>p.toFixed(0)).join(", ")}<br><br>
+`;
+});
+
+resultado += `<b>Sobrante total: ${sobranteTotal.toFixed(0)} cm</b>`;
+
+res.innerHTML = resultado;
+
+}
+
+</script>
+
+</body>
+</html>
