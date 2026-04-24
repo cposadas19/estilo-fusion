@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotizador Taller PRO</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #fff;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+}
+
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: none;
+}
+
+button {
+  background: #22c55e;
+  color: white;
+  font-weight: bold;
+}
+
+.result {
+  background: #111827;
+  padding: 15px;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🔥 Cotizador Taller PRO</h1>
+
+<div class="card">
+  <h3>Agregar Trabajo</h3>
+
+  <input id="ancho" placeholder="Ancho (cm o pulgadas)">
+  <input id="alto" placeholder="Alto (barrotes o pieza)">
+  <input id="separacion" placeholder="Separación deseada">
+  <input id="perfil" placeholder="Ancho barrote (ej 1)">
+
+  <select id="material">
+    <option>Varilla</option>
+    <option>Perfil</option>
+    <option>Ángulo</option>
+    <option>Platina</option>
+    <option>Lámina hierro</option>
+    <option>Melamina</option>
+    <option>Plywood</option>
+  </select>
+
+  <input id="largoBarra" placeholder="Largo barra (ej 360)" value="360">
+  <input id="precio" placeholder="Precio por barra / lámina">
+
+  <button onclick="agregarTrabajo()">Agregar</button>
+</div>
+
+<div class="card">
+  <h3>Trabajos</h3>
+  <div id="lista"></div>
+</div>
+
+<div class="card result">
+  <h3>Resultado</h3>
+  <div id="resultado"></div>
+</div>
+
+<script>
+let trabajos = [];
+
+// 🔥 algoritmo optimización (usa sobrantes)
+function optimizarCortes(piezas, largoBarra) {
+  let barras = [];
+  
+  piezas.sort((a,b)=>b-a); // mayor a menor
+
+  piezas.forEach(p => {
+    let colocado = false;
+
+    for (let i=0; i<barras.length; i++) {
+      if (barras[i] >= p) {
+        barras[i] -= p;
+        colocado = true;
+        break;
+      }
+    }
+
+    if (!colocado) {
+      barras.push(largoBarra - p);
+    }
+  });
+
+  return {
+    barras: barras.length,
+    sobrante: barras.reduce((a,b)=>a+b,0)
+  };
+}
+
+// 🔥 cálculo barrotes
+function calcularBarrotes(ancho, separacion, perfil) {
+  let espacios = Math.ceil((ancho - perfil) / (separacion + perfil));
+  let barrotes = espacios - 1;
+  return barrotes;
+}
+
+function agregarTrabajo() {
+  let ancho = parseFloat(document.getElementById("ancho").value);
+  let alto = parseFloat(document.getElementById("alto").value);
+  let separacion = parseFloat(document.getElementById("separacion").value);
+  let perfil = parseFloat(document.getElementById("perfil").value);
+  let material = document.getElementById("material").value;
+  let largoBarra = parseFloat(document.getElementById("largoBarra").value);
+  let precio = parseFloat(document.getElementById("precio").value);
+
+  if (!ancho || !alto || !precio) return;
+
+  let piezas = [];
+  let barras = 0;
+  let sobrante = 0;
+
+  if (material === "Varilla" || material === "Perfil" || material === "Ángulo" || material === "Platina") {
+
+    let cantidad = calcularBarrotes(ancho, separacion || 10, perfil || 1);
+
+    for (let i=0;i<cantidad;i++) {
+      piezas.push(alto);
+    }
+
+    let res = optimizarCortes(piezas, largoBarra);
+    barras = res.barras;
+    sobrante = res.sobrante;
+
+  } else {
+    // láminas
+    let area = ancho * alto;
+    let lamina = 122 * 244; // cm aprox
+
+    barras = Math.ceil((area / lamina) * 1.10);
+    sobrante = 0;
+  }
+
+  let subtotal = barras * precio;
+
+  trabajos.push({
+    material,
+    barras,
+    sobrante,
+    subtotal
+  });
+
+  mostrar();
+}
+
+function mostrar() {
+  let lista = document.getElementById("lista");
+  let resultado = document.getElementById("resultado");
+
+  lista.innerHTML = "";
+  let total = 0;
+
+  trabajos.forEach((t,i)=>{
+    lista.innerHTML += `
+      <div>
+        ${i+1}. ${t.material} | Barras: ${t.barras} | Sobrante: ${t.sobrante.toFixed(2)}
+      </div>
+    `;
+    total += t.subtotal;
+  });
+
+  resultado.innerHTML = `
+    Material: ${total.toFixed(2)} <br>
+    Precio final: ${(total * 2.5).toFixed(2)}
+  `;
+}
+</script>
+
+</body>
+</html>
