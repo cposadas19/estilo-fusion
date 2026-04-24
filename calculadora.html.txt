@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FyC Solution - Calculadora</title>
+
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:15px; }
+.card { background:#1e293b; padding:12px; border-radius:10px; margin-top:10px; }
+input, select { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:none; }
+button { width:100%; padding:12px; background:#22c55e; color:black; font-weight:bold; border:none; border-radius:8px; }
+.result { background:#111827; padding:10px; border-radius:8px; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<h2>🔷 FyC Solution - Estilo Fusión</h2>
+
+<div class="card">
+<h3>Medidas</h3>
+<input id="ancho" placeholder="Ancho (cm)">
+<input id="alto" placeholder="Alto (cm)">
+<input id="sep" placeholder="Separación barrotes (cm)">
+</div>
+
+<div class="card">
+<h3>Marco</h3>
+<input id="tuboNombre" placeholder='Ej: 2", 1", 2x1, 3/4"'>
+<input id="tuboPrecio" placeholder="Precio barra 6m">
+</div>
+
+<div class="card">
+<h3>Barrotes</h3>
+<select id="tipoBarrote">
+<option value="varilla">Varilla</option>
+<option value="tubo">Tubo</option>
+<option value="platina">Platina</option>
+</select>
+
+<input id="barroteNombre" placeholder="Ej: varilla 1/2">
+<input id="barrotePrecio" placeholder="Precio unidad">
+</div>
+
+<div class="card">
+<label>Producción diaria</label>
+<input id="produccion" value="3">
+</div>
+
+<div class="card">
+<button onclick="calcular()">Calcular</button>
+</div>
+
+<div class="card">
+<h3>Resultado</h3>
+<div id="res" class="result"></div>
+</div>
+
+<script>
+
+// 🔥 convierte texto a pulgadas
+function extraerPulgadas(texto){
+
+texto = texto.toLowerCase();
+
+// 3/4"
+if(texto.includes("/")){
+let partes = texto.match(/(\d+)\/(\d+)/);
+if(partes){
+return parseFloat(partes[1]) / parseFloat(partes[2]);
+}
+}
+
+// 2x1 o 2x2
+if(texto.includes("x")){
+let partes = texto.split("x");
+return Math.max(parseFloat(partes[0]), parseFloat(partes[1]));
+}
+
+// 2"
+let numero = texto.match(/[\d.]+/);
+if(numero){
+return parseFloat(numero[0]);
+}
+
+return 1; // default
+}
+
+// 🔥 pulgadas → cm
+function pulgadasACm(pulg){
+return pulg * 2.54;
+}
+
+function calcular(){
+
+let ancho = parseFloat(document.getElementById("ancho").value);
+let alto = parseFloat(document.getElementById("alto").value);
+let sep = parseFloat(document.getElementById("sep").value);
+
+let tuboTexto = document.getElementById("tuboNombre").value;
+let tuboPrecio = parseFloat(document.getElementById("tuboPrecio").value);
+
+let tipoBarrote = document.getElementById("tipoBarrote").value;
+let barroteNombre = document.getElementById("barroteNombre").value;
+let barrotePrecio = parseFloat(document.getElementById("barrotePrecio").value);
+
+let produccion = parseFloat(document.getElementById("produccion").value);
+
+if(!ancho || !alto || !sep || !tuboPrecio || !barrotePrecio){
+alert("Faltan datos");
+return;
+}
+
+// 🔧 detectar tamaño del tubo
+let pulg = extraerPulgadas(tuboTexto);
+let tuboAlto = pulgadasACm(pulg);
+
+// 🔩 BARROTES
+let espacios = Math.floor(ancho / sep);
+if(espacios < 1) espacios = 1;
+
+let barrotes = espacios + 1;
+let separacionReal = ancho / espacios;
+
+// 🔥 AQUÍ ESTÁ LO IMPORTANTE
+let altoBarrote = alto - (tuboAlto * 2);
+
+// 🔩 MARCO
+let tuboTotal = (2*ancho + 2*alto)/600;
+let tubos = Math.ceil(tuboTotal);
+
+// 🔩 BARROTES MATERIAL
+let largoTotal = barrotes * altoBarrote;
+
+let unidadesBarrote;
+
+if(tipoBarrote == "varilla"){
+unidadesBarrote = Math.ceil(largoTotal / 914);
+}else{
+unidadesBarrote = Math.ceil(largoTotal / 600);
+}
+
+// 💰 COSTOS
+let costoTubo = tubos * tuboPrecio;
+let costoBarrote = unidadesBarrote * barrotePrecio;
+
+let material = costoTubo + costoBarrote;
+
+// 👷 MANO
+let mano = 1200 / produccion;
+
+// 💰 TOTAL
+let costo = material + mano;
+
+// 💰 PRECIOS
+let precioPro = costo * 1.7;
+let precioRapido = material * 2.5;
+
+// 📊 MOSTRAR
+document.getElementById("res").innerHTML = `
+Barrotes: ${barrotes}<br>
+Altura barrote: ${altoBarrote.toFixed(1)} cm<br>
+Separación real: ${separacionReal.toFixed(1)} cm<br><br>
+
+Tubos marco: ${tubos}<br>
+Barrotes unidades: ${unidadesBarrote}<br><br>
+
+Material: L ${material.toFixed(0)}<br>
+Mano: L ${mano.toFixed(0)}<br>
+Costo: L ${costo.toFixed(0)}<br><br>
+
+Precio PRO: L ${precioPro.toFixed(0)}<br>
+Precio rápido: L ${precioRapido.toFixed(0)}
+`;
+
+}
+
+</script>
+
+</body>
+</html>
