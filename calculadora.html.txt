@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador Maestro - Estilo Fusion</title>
+    <style>
+        :root { --dorado: #b08d57; --negro: #1a1a1a; --gris: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; padding-bottom: 50px; }
+        nav { background: var(--negro); padding: 15px; text-align: center; margin: -10px -10px 15px -10px; }
+        nav a { color: white; margin: 0 10px; text-decoration: none; font-weight: bold; font-size: 12px; }
+        
+        .tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+        .tab { flex: 1; padding: 12px; background: #ccc; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: bold; font-size: 10px; }
+        .tab.active { background: var(--dorado); color: white; }
+
+        .card { background: white; padding: 15px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; display: none; }
+        .card.active { display: block; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .full { grid-column: span 2; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-top: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        
+        .btn-add { width: 100%; padding: 15px; background: var(--negro); color: var(--dorado); border: 2px solid var(--dorado); border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .btn-ws { width: 100%; padding: 15px; background: #25d366; color: white; border: none; border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; font-size: 16px; }
+        
+        .lista-item { background: #fff; border-left: 4px solid var(--dorado); padding: 12px; margin-bottom: 8px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        .btn-del { position: absolute; right: 10px; top: 10px; background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+
+        .resumen-final { background: var(--negro); color: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
+        .linea { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 5px 0; font-size: 13px; }
+        .total-final { font-size: 24px; color: var(--dorado); text-align: center; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav><a href="index.html">INICIO</a><a href="calculadora.html" style="color: var(--dorado);">COTIZADOR</a></nav>
+
+<div class="tabs">
+    <button class="tab active" onclick="openTab(event, 'pvc')">PVC / VENTANAS</button>
+    <button class="tab" onclick="openTab(event, 'metal')">METAL</button>
+    <button class="tab" onclick="openTab(event, 'elec')">ELÉCTRICO</button>
+</div>
+
+<!-- PVC -->
+<div id="pvc" class="card active">
+    <h2>Ventanas y Puertas PVC</h2>
+    <div class="grid">
+        <div class="full"><label>Nombre (Ej: Ventana Sala)</label><input type="text" id="p_desc"></div>
+        <div><label>Ancho (pulg)</label><input type="number" id="p_ancho" value="40"></div>
+        <div><label>Alto (pulg)</label><input type="number" id="p_alto" value="40"></div>
+        <div class="full"><label>Tipo de Hoja</label>
+            <select id="p_tipo">
+                <option value="2">2 Hojas Corredizas</option>
+                <option value="1">1 Hoja Fija / 1 Corrediza</option>
+            </select>
+        </div>
+        <div><label>Precio Tira 6m (Lps)</label><input type="number" id="p_tira" value="850"></div>
+        <div><label>Precio Vidrio m²</label><input type="number" id="p_v_precio" value="600"></div>
+    </div>
+    <button class="btn-add" onclick="agregarPVC()">+ AGREGAR VENTANA</button>
+</div>
+
+<!-- METAL (Ya lo tienes, aquí una versión resumida) -->
+<div id="metal" class="card">
+    <h2>Metal / Estructuras</h2>
+    <div class="grid">
+        <div class="full"><label>Descripción</label><input type="text" id="m_desc"></div>
+        <div><label>Ancho (pulg)</label><input type="number" id="m_ancho"></div>
+        <div><label>Alto (pulg)</label><input type="number" id="m_alto"></div>
+    </div>
+    <button class="btn-add" onclick="agregarMetal()">+ AGREGAR METAL</button>
+</div>
+
+<!-- ELÉCTRICO -->
+<div id="elec" class="card">
+    <h2>Electricidad (Por Puntos)</h2>
+    <div class="grid">
+        <div class="full"><label>Tipo (Toma/Lámpara/Breaker)</label><input type="text" id="e_desc"></div>
+        <div><label>Cantidad</label><input type="number" id="e_cant" value="1"></div>
+        <div><label>Precio p/Punto</label><input type="number" id="e_costo" value="400"></div>
+    </div>
+    <button class="btn-add" onclick="agregarElec()">+ AGREGAR PUNTO</button>
+</div>
+
+<div id="listaItems"></div>
+
+<div id="areaRes" class="resumen-final" style="display:none;">
+    <h3>📊 Presupuesto Estilo Fusion</h3>
+    <div id="detalle"></div>
+    <div class="total-final" id="totalFinal"></div>
+    <button class="btn-ws" onclick="enviarWS()">ENVIAR POR WHATSAPP 📱</button>
+</div>
+
+<script>
+let carrito = [];
+
+function openTab(evt, name) {
+    let card = document.getElementsByClassName("card");
+    for (let i = 0; i < card.length; i++) card[i].style.display = "none";
+    let tab = document.getElementsByClassName("tab");
+    for (let i = 0; i < tab.length; i++) tab[i].className = tab[i].className.replace(" active", "");
+    document.getElementById(name).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
+function agregarPVC() {
+    const a = parseFloat(document.getElementById('p_ancho').value);
+    const h = parseFloat(document.getElementById('p_alto').value);
+    const pTira = parseFloat(document.getElementById('p_tira').value);
+    const pVidrio = parseFloat(document.getElementById('p_v_precio').value);
+    
+    // Lógica técnica de cortes PVC:
+    // Carril = Perímetro (2a + 2h)
+    // Traslape/Gancho = Depende de altura (2h mínimo por hoja)
+    const pulgCarril = (a * 2) + (h * 2);
+    const pulgHojas = (h * 4); // 2 traslapes + 2 ganchos
+    const m2Vidrio = (a * h) / 1550;
+    
+    const costo = ((pulgCarril + pulgHojas) * 0.0254 * (pTira/6)) + (m2Vidrio * pVidrio) + 450; // 450 herrajes y felpa
+    
+    carrito.push({ tipo: 'PVC', desc: document.getElementById('p_desc').value || 'Ventana', costo: costo, det: `${a}x${h}"` });
+    render();
+}
+
+function agregarMetal() {
+    const a = parseFloat(document.getElementById('m_ancho').value);
+    const h = parseFloat(document.getElementById('m_alto').value);
+    const costo = ((a*2)+(h*2)) * 30; // 30 Lps/pulgada estimado con mano de obra
+    carrito.push({ tipo: 'METAL', desc: document.getElementById('m_desc').value || 'Estructura', costo: costo, det: `${a}x${h}"` });
+    render();
+}
+
+function agregarElec() {
+    const c = parseInt(document.getElementById('e_cant').value);
+    const p = parseFloat(document.getElementById('e_costo').value);
+    carrito.push({ tipo: 'ELEC', desc: document.getElementById('e_desc').value, costo: c * p, det: `${c} pts` });
+    render();
+}
+
+function render() {
+    const lista = document.getElementById('listaItems');
+    lista.innerHTML = "";
+    let total = 0;
+    carrito.forEach((item, i) => {
+        total += item.costo;
+        lista.innerHTML += `<div class="lista-item"><strong>${item.desc}</strong> (${item.det})<br>L. ${item.costo.toFixed(2)}<button class="btn-del" onclick="carrito.splice(${i},1);render();">X</button></div>`;
+    });
+    document.getElementById('areaRes').style.display = carrito.length > 0 ? "block" : "none";
+    document.getElementById('totalFinal').innerText = "TOTAL: L. " + total.toLocaleString();
+}
+
+function enviarWS() {
+    let msg = "PROYECTO ESTILO FUSION%0A--------------------%0A";
+    let total = 0;
+    carrito.forEach(item => {
+        msg += `• ${item.desc} (${item.tipo}): L. ${item.costo.toLocaleString()}%0A`;
+        total += item.costo;
+    });
+    msg += `--------------------%0ATOTAL COTIZADO: L. ${total.toLocaleString()}`;
+    window.open(`https://wa.me{msg}`);
+}
+</script>
+</body>
+</html>
