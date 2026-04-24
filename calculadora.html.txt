@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FyC Solution PRO</title>
+
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:15px; }
+.card { background:#1e293b; padding:12px; border-radius:10px; margin-top:10px; }
+input, select { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:none; }
+button { width:100%; padding:10px; margin-top:5px; border:none; border-radius:8px; font-weight:bold; }
+.add { background:#22c55e; color:black; }
+.calc { background:#3b82f6; color:white; }
+.delete { background:#ef4444; color:white; }
+.result { background:#111827; padding:10px; border-radius:8px; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<h2>FyC Solution - Sistema PRO</h2>
+
+<div class="card">
+<input id="ancho" placeholder="Ancho (cm)">
+<input id="alto" placeholder="Alto (cm)">
+<input id="sep" placeholder="Separación deseada (cm)">
+<input id="tuboMarco" placeholder='Marco ej: 2" o 2x1'>
+
+<select id="modo">
+<option value="cercano">Más cercano</option>
+<option value="menor">No pasarme</option>
+<option value="simetrico">Simétrico</option>
+</select>
+
+<select id="tipoBarrote">
+<option value="varilla">Varilla (30 pies)</option>
+<option value="tubo">Tubo (20 pies)</option>
+<option value="platina">Platina (20 pies)</option>
+</select>
+
+<button class="add" onclick="agregar()">Agregar Verja</button>
+<button class="calc" onclick="calcular()">Calcular Proyecto</button>
+</div>
+
+<div class="card">
+<h3>Verjas agregadas</h3>
+<div id="lista"></div>
+</div>
+
+<div class="card">
+<h3>Resultado</h3>
+<div id="res"></div>
+</div>
+
+<script>
+
+let proyecto = [];
+
+// detectar pulgadas
+function extraer(t){
+t = t.toLowerCase();
+
+if(t.includes("/")){
+let m = t.match(/(\d+)\/(\d+)/);
+return m ? m[1]/m[2] : 1;
+}
+
+if(t.includes("x")){
+let p = t.split("x");
+return Math.max(parseFloat(p[0]), parseFloat(p[1]));
+}
+
+let n = t.match(/[\d.]+/);
+return n ? parseFloat(n[0]) : 1;
+}
+
+// mostrar lista
+function render(){
+
+let html="";
+
+proyecto.forEach((v,i)=>{
+
+html += `
+<div class="result">
+Verja ${i+1}<br>
+Barrotes: ${v.info.barrotes}<br>
+Separación: ${v.info.separacionReal.toFixed(1)} cm<br>
+Altura: ${v.info.altoBarrote.toFixed(1)} cm<br>
+
+<button class="delete" onclick="eliminar(${i})">Eliminar</button>
+</div>
+`;
+
+});
+
+document.getElementById("lista").innerHTML = html;
+}
+
+// agregar verja
+function agregar(){
+
+let ancho = parseFloat(document.getElementById("ancho").value);
+let alto = parseFloat(document.getElementById("alto").value);
+let sep = parseFloat(document.getElementById("sep").value);
+let tipo = document.getElementById("tipoBarrote").value;
+let modo = document.getElementById("modo").value;
+let tuboTexto = document.getElementById("tuboMarco").value;
+
+if(!ancho || !alto || !sep || !tuboTexto){
+alert("Faltan datos");
+return;
+}
+
+let pulg = extraer(tuboTexto);
+let tubo = pulg * 2.54;
+
+let division = ancho / sep;
+let espacios;
+
+if(modo==="cercano") espacios=Math.round(division);
+else if(modo==="menor") espacios=Math.floor(division);
+else espacios=Math.ceil(division);
+
+if(espacios<1) espacios=1;
+
+let barrotes = espacios + 1;
+let separacionReal = ancho / espacios;
+let altoBarrote = alto - (tubo*2);
+
+let marco = [ancho, ancho, alto, alto];
+let barrotesArr=[];
+
+for(let i=0;i<barrotes;i++){
+barrotesArr.push(altoBarrote);
+}
+
+proyecto.push({
+marco,
+barrotes:barrotesArr,
+tipo,
+info:{barrotes,separacionReal,altoBarrote}
+});
+
+render();
+}
+
+// eliminar
+function eliminar(i){
+proyecto.splice(i,1);
+render();
+}
+
+// optimizar
+function optimizar(piezas,largo){
+
+piezas.sort((a,b)=>b-a);
+let barras=[];
+
+piezas.forEach(p=>{
+
+let colocado=false;
+
+for(let i=0;i<barras.length;i++){
+if(barras[i]+p<=largo){
+barras[i]+=p;
+colocado=true;
+break;
+}
+}
+
+if(!colocado){
+barras.push(p);
+}
+
+});
+
+return barras.length;
+}
+
+// calcular
+function calcular(){
+
+if(proyecto.length===0){
+alert("Agregá verjas");
+return;
+}
+
+let marcoTotal=[];
+let barrotesTotal=[];
+let tipo="tubo";
+
+proyecto.forEach(v=>{
+marcoTotal=marcoTotal.concat(v.marco);
+barrotesTotal=barrotesTotal.concat(v.barrotes);
+tipo=v.tipo;
+});
+
+let tubosMarco=optimizar(marcoTotal,610);
+let largo=(tipo==="varilla")?914:610;
+let tubosBarrotes=optimizar(barrotesTotal,largo);
+
+document.getElementById("res").innerHTML=`
+Marco: ${tubosMarco} tubos<br>
+Barrotes: ${tubosBarrotes} barras<br><br>
+TOTAL: ${tubosMarco+tubosBarrotes}
+`;
+}
+
+</script>
+
+</body>
+</html>
