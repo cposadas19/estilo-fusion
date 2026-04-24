@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FyC Solution PRO</title>
+
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:15px; }
+.card { background:#1e293b; padding:12px; border-radius:10px; margin-top:10px; }
+input, select { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:none; }
+button { width:100%; padding:10px; margin-top:5px; border:none; border-radius:8px; font-weight:bold; }
+.add { background:#22c55e; }
+.delete { background:#ef4444; color:white; }
+.result { background:#111827; padding:10px; border-radius:8px; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<h2>FyC Solution - Sistema REAL</h2>
+
+<div class="card">
+
+<input id="ancho" placeholder="Ancho (cm)">
+<input id="alto" placeholder="Alto (cm)">
+<input id="sep" placeholder="Separación (cm)">
+<input id="tuboMarco" placeholder='Marco ej: 2"'>
+
+<select id="modo">
+<option value="cercano">Más cercano</option>
+<option value="menor">No pasarme</option>
+<option value="simetrico">Simétrico</option>
+</select>
+
+<select id="tipoBarrote">
+<option value="varilla">Varilla (914 cm)</option>
+<option value="tubo">Tubo (610 cm)</option>
+<option value="platina">Platina (610 cm)</option>
+</select>
+
+<button class="add" onclick="agregar()">Agregar Verja</button>
+
+</div>
+
+<div class="card">
+<h3>Verjas</h3>
+<div id="lista"></div>
+</div>
+
+<div class="card">
+<h3>Resultado</h3>
+<div id="res"></div>
+</div>
+
+<script>
+
+let proyecto=[];
+
+// pulgadas a cm
+function extraer(t){
+let n=t.match(/[\d.]+/);
+return n?parseFloat(n[0]):1;
+}
+
+// recalcular TODO siempre
+function recalcular(){
+
+if(proyecto.length===0){
+document.getElementById("res").innerHTML="";
+return;
+}
+
+let marcoTotal=[];
+let varillaTotal=[];
+let tuboTotal=[];
+let platinaTotal=[];
+let detalle="";
+
+proyecto.forEach((v,i)=>{
+
+marcoTotal=marcoTotal.concat(v.marco);
+
+if(v.tipo==="varilla"){
+varillaTotal=varillaTotal.concat(v.barrotesArr);
+}
+else if(v.tipo==="tubo"){
+tuboTotal=tuboTotal.concat(v.barrotesArr);
+}
+else{
+platinaTotal=platinaTotal.concat(v.barrotesArr);
+}
+
+detalle+=`
+<hr>
+Verja ${i+1}<br>
+Barrotes: ${v.barrotes}<br>
+Separación: ${v.sepReal.toFixed(1)} cm<br>
+Altura: ${v.altoBarrote.toFixed(1)} cm<br>
+`;
+
+});
+
+let tubosMarco=optimizar(marcoTotal,610);
+let varillas=optimizar(varillaTotal,914);
+let tubosBarrotes=optimizar(tuboTotal,610);
+let platinas=optimizar(platinaTotal,610);
+
+document.getElementById("res").innerHTML=`
+${detalle}
+
+<hr>
+TOTAL<br><br>
+
+Marco: ${tubosMarco} tubos<br>
+Varilla: ${varillas}<br>
+Tubo: ${tubosBarrotes}<br>
+Platina: ${platinas}
+`;
+
+}
+
+// optimización
+function optimizar(piezas,largo){
+
+piezas.sort((a,b)=>b-a);
+let barras=[];
+
+piezas.forEach(p=>{
+
+let colocado=false;
+
+for(let i=0;i<barras.length;i++){
+if(barras[i]+p<=largo){
+barras[i]+=p;
+colocado=true;
+break;
+}
+}
+
+if(!colocado) barras.push(p);
+
+});
+
+return barras.length;
+}
+
+// agregar
+function agregar(){
+
+let ancho=parseFloat(ancho.value);
+let alto=parseFloat(alto.value);
+let sep=parseFloat(sep.value);
+let tipo=tipoBarrote.value;
+let modo=modo.value;
+let tubo=extraer(tuboMarco.value)*2.54;
+
+if(!ancho||!alto||!sep){
+alert("Faltan datos");
+return;
+}
+
+let div=ancho/sep;
+let espacios;
+
+if(modo==="cercano") espacios=Math.round(div);
+else if(modo==="menor") espacios=Math.floor(div);
+else espacios=Math.ceil(div);
+
+if(espacios<1) espacios=1;
+
+let barrotes=espacios+1;
+let sepReal=ancho/espacios;
+let altoBarrote=alto-(tubo*2);
+
+let marco=[ancho,ancho,alto,alto];
+let barrotesArr=Array(barrotes).fill(altoBarrote);
+
+proyecto.push({
+marco,
+barrotesArr,
+tipo,
+barrotes,
+sepReal,
+altoBarrote
+});
+
+limpiar();
+render();
+recalcular();
+
+}
+
+// limpiar campos
+function limpiar(){
+ancho.value="";
+alto.value="";
+sep.value="";
+tuboMarco.value="";
+}
+
+// mostrar lista
+function render(){
+
+let html="";
+
+proyecto.forEach((v,i)=>{
+
+html+=`
+<div class="result">
+Verja ${i+1}<br>
+Barrotes: ${v.barrotes}<br>
+<button class="delete" onclick="eliminar(${i})">Eliminar</button>
+</div>
+`;
+
+});
+
+lista.innerHTML=html;
+
+}
+
+// eliminar
+function eliminar(i){
+proyecto.splice(i,1);
+render();
+recalcular();
+}
+
+</script>
+
+</body>
+</html>
