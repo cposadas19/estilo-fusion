@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FyC Solution PRO</title>
+
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:15px; }
+.card { background:#1e293b; padding:12px; border-radius:10px; margin-top:10px; }
+input, select { width:100%; padding:10px; margin:5px 0; border-radius:8px; border:none; }
+button { width:100%; padding:12px; margin-top:5px; background:#22c55e; color:black; font-weight:bold; border:none; border-radius:8px; }
+.result { background:#111827; padding:10px; border-radius:8px; margin-top:10px; }
+</style>
+</head>
+
+<body>
+
+<h2>FyC Solution - Sistema PRO</h2>
+
+<div class="card">
+<h3>Proyecto</h3>
+<input id="nombreProyecto" placeholder="Nombre del proyecto">
+</div>
+
+<div class="card">
+<h3>Agregar Verja</h3>
+<input id="ancho" placeholder="Ancho (cm)">
+<input id="alto" placeholder="Alto (cm)">
+<input id="sep" placeholder="Separación barrotes (cm)">
+<input id="tuboMarco" placeholder='Marco ej: 2", 2x1'>
+<select id="tipoBarrote">
+<option value="varilla">Varilla (30 pies)</option>
+<option value="tubo">Tubo (20 pies)</option>
+<option value="platina">Platina (20 pies)</option>
+</select>
+
+<button onclick="agregar()">➕ Agregar Verja</button>
+</div>
+
+<div class="card">
+<button onclick="calcular()">📐 Calcular Proyecto</button>
+<button onclick="guardar()">💾 Guardar Proyecto</button>
+</div>
+
+<div class="card">
+<h3>Resultado actual</h3>
+<div id="res" class="result"></div>
+</div>
+
+<div class="card">
+<h3>Proyectos guardados</h3>
+<div id="lista"></div>
+</div>
+
+<script>
+
+let proyecto = [];
+
+// detectar pulgadas
+function extraer(t){
+t=t.toLowerCase();
+
+if(t.includes("/")){
+let m=t.match(/(\d+)\/(\d+)/);
+return m?m[1]/m[2]:1;
+}
+
+if(t.includes("x")){
+let p=t.split("x");
+return Math.max(parseFloat(p[0]),parseFloat(p[1]));
+}
+
+let n=t.match(/[\d.]+/);
+return n?parseFloat(n[0]):1;
+}
+
+// agregar verja
+function agregar(){
+
+let ancho=parseFloat(document.getElementById("ancho").value);
+let alto=parseFloat(document.getElementById("alto").value);
+let sep=parseFloat(document.getElementById("sep").value);
+let tipo=document.getElementById("tipoBarrote").value;
+let tuboTexto=document.getElementById("tuboMarco").value;
+
+if(!ancho||!alto||!sep||!tuboTexto){
+alert("Faltan datos");
+return;
+}
+
+let pulg=extraer(tuboTexto);
+let tubo=pulg*2.54;
+
+let espacios=Math.floor(ancho/sep);
+if(espacios<1) espacios=1;
+
+let barrotes=espacios+1;
+let altoBarrote=alto-(tubo*2);
+
+let piezas=[];
+
+// marco
+piezas.push(ancho,ancho,alto,alto);
+
+// barrotes
+for(let i=0;i<barrotes;i++){
+piezas.push(altoBarrote);
+}
+
+proyecto.push({piezas,tipo});
+
+alert("Verja agregada");
+}
+
+// calcular optimización
+function calcular(){
+
+let piezas=[];
+let tubos=[];
+
+proyecto.forEach(v=>{
+
+let largo=(v.tipo==="varilla")?914:610;
+
+v.piezas.forEach(c=>{
+
+let colocado=false;
+
+for(let t of tubos){
+if(t.usado+c<=largo){
+t.usado+=c;
+colocado=true;
+break;
+}
+}
+
+if(!colocado){
+tubos.push({usado:c,largo});
+}
+
+});
+
+});
+
+let sobrante=0;
+
+tubos.forEach(t=>{
+sobrante+=(t.largo-t.usado);
+});
+
+res.innerHTML=`
+Verjas: ${proyecto.length}<br>
+Tubos necesarios: ${tubos.length}<br>
+Sobrante total: ${sobrante.toFixed(0)} cm
+`;
+
+}
+
+// guardar proyecto
+function guardar(){
+
+let nombre=document.getElementById("nombreProyecto").value;
+
+if(!nombre){
+alert("Poné nombre al proyecto");
+return;
+}
+
+let data=JSON.parse(localStorage.getItem("proyectos"))||[];
+
+data.push({nombre,proyecto});
+
+localStorage.setItem("proyectos",JSON.stringify(data));
+
+proyecto=[];
+mostrar();
+}
+
+// mostrar
+function mostrar(){
+
+let data=JSON.parse(localStorage.getItem("proyectos"))||[];
+let html="";
+
+data.forEach((p,i)=>{
+
+html+=`
+<div class="result">
+<b>${p.nombre}</b><br>
+Verjas: ${p.proyecto.length}<br>
+
+<input placeholder="Precio cobrado" onchange="ganancia(this)">
+<div></div>
+
+<button onclick="eliminar(${i})">Eliminar</button>
+</div>
+`;
+});
+
+lista.innerHTML=html;
+}
+
+// ganancia
+function ganancia(input){
+let precio=parseFloat(input.value);
+input.nextElementSibling.innerHTML="Registrado: L "+precio;
+}
+
+// eliminar
+function eliminar(i){
+let data=JSON.parse(localStorage.getItem("proyectos"));
+data.splice(i,1);
+localStorage.setItem("proyectos",JSON.stringify(data));
+mostrar();
+}
+
+mostrar();
+
+</script>
+
+</body>
+</html>
