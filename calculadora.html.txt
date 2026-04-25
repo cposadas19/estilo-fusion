@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estilo Fusion Pro - Multi-Oficios</title>
+    <style>
+        :root { --dorado: #b08d57; --madera: #8b5a2b; --negro: #0a0a0a; --negro-glass: rgba(20, 20, 20, 0.95); }
+        body { 
+            font-family: 'Segoe UI', sans-serif; background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('https://unsplash.com');
+            background-size: cover; background-attachment: fixed; margin: 0; padding: 15px; color: #f5f5f5; 
+        }
+        header { text-align: center; padding: 10px 0; }
+        .logo-img { width: 100%; max-width: 250px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); }
+        
+        .tabs { display: flex; gap: 5px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .tab { flex: none; padding: 12px 20px; border: 1px solid var(--dorado); border-radius: 12px; background: rgba(255,255,255,0.05); color: white; font-weight: bold; cursor: pointer; font-size: 10px; text-transform: uppercase; }
+        .tab.active { background: var(--dorado); color: var(--negro); }
+
+        .card { background: var(--negro-glass); padding: 20px; border-radius: 20px; border: 1px solid rgba(176,141,87,0.3); box-shadow: 0 15px 35px rgba(0,0,0,0.8); margin-bottom: 20px; display: none; }
+        .card.active { display: block; }
+
+        h2 { font-size: 13px; color: var(--dorado); border-bottom: 1px solid var(--dorado); padding-bottom: 5px; margin-bottom: 15px; text-transform: uppercase; }
+        label { display: block; font-size: 10px; font-weight: bold; color: #aaa; margin-bottom: 4px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 12px; background: rgba(255,255,255,0.07); border: 1px solid #333; border-radius: 10px; color: white; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
+        
+        .btn-add { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--dorado), var(--madera)); color: white; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
+        .lista-item { background: rgba(255,255,255,0.05); border-left: 5px solid var(--dorado); padding: 15px; margin-bottom: 10px; border-radius: 12px; position: relative; }
+        .btn-del { position: absolute; right: 10px; top: 10px; background: #c0392b; color: white; border: none; padding: 6px 10px; border-radius: 8px; }
+
+        .resumen-final { background: #000; padding: 20px; border-radius: 20px; border: 2px solid var(--dorado); }
+        .res-line { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; }
+        .total-lps { font-size: 28px; color: var(--dorado); text-align: center; margin-top: 15px; font-weight: 900; }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="https://githubusercontent.com" class="logo-img">
+</header>
+
+<div class="tabs">
+    <button class="tab active" onclick="openTab(event, 'proyectos')">PROYECTOS</button>
+    <button class="tab" onclick="openTab(event, 'inventario')">BASE DE DATOS</button>
+</div>
+
+<!-- SECCIÓN PROYECTOS -->
+<div id="proyectos" class="card active">
+    <h2>Nueva Pieza / Servicio</h2>
+    <label>¿Qué estás cotizando?</label>
+    <select id="p_oficio" onchange="ajustarCampos()">
+        <option value="metal">Metal / Estructuras</option>
+        <option value="pvc">Ventanas PVC</option>
+        <option value="mueble">Muebles (Melamina/Pino)</option>
+        <option value="electricidad">Instalación Eléctrica</option>
+    </select>
+
+    <label>Descripción</label>
+    <input type="text" id="p_desc" placeholder="Ej: Portón, Ventana, Cocina...">
+
+    <div id="campos_medidas">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1"><label id="lbl_ancho">Ancho (pulg)</label><input type="number" id="p_ancho" value="40"></div>
+            <div style="flex:1"><label id="lbl_alto">Alto (pulg)</label><input type="number" id="p_alto" value="40"></div>
+        </div>
+    </div>
+
+    <div id="detalles_metal">
+        <label>Material Marco</label><select id="sel_marco"></select>
+        <label>Grosor Marco (pulg)</label><input type="number" id="p_grosor" value="1.5">
+        <label>Material Barrotes</label><select id="sel_barrote"></select>
+        <label>Separación (pulg)</label><input type="number" id="p_sep" value="5">
+    </div>
+
+    <div id="detalles_pvc_mueble" style="display:none;">
+        <label>Material Principal (Lámina/Tira)</label><select id="sel_lamina"></select>
+        <label>Precio Vidrio / Herrajes (Lps)</label><input type="number" id="p_extra" value="0">
+    </div>
+
+    <div id="detalles_elec" style="display:none;">
+        <label>Cantidad de Puntos</label><input type="number" id="p_cant_elec" value="1">
+        <label>Precio por Punto (Material+MO)</label><input type="number" id="p_precio_elec" value="450">
+    </div>
+
+    <label>Mano de Obra (Lps)</label><input type="number" id="p_mo" value="0">
+    <label>Ganancia (%)</label><input type="number" id="p_gan" value="30">
+
+    <button class="btn-add" onclick="agregarAlProyecto()">+ AÑADIR AL PRESUPUESTO</button>
+</div>
+
+<!-- SECCIÓN BASE DE DATOS -->
+<div id="inventario" class="card">
+    <h2>Registrar Material</h2>
+    <label>Nombre del Material</label><input type="text" id="inv_nombre">
+    <label>Categoría</label>
+    <select id="inv_tipo">
+        <option value="Marco">Marco Metal</option>
+        <option value="Barrote">Barrote Metal</option>
+        <option value="Lamina">Lámina / Tira (PVC/Madera)</option>
+    </select>
+    <label>Precio Costo (Lps)</label><input type="number" id="inv_precio">
+    <label>Formato de Compra</label>
+    <select id="inv_unidad">
+        <option value="20">Tira 20ft</option>
+        <option value="30">Varilla 30ft</option>
+        <option value="1">Lámina 4x8ft</option>
+        <option value="6">Tira PVC 6m</option>
+    </select>
+    <button onclick="guardarMaterial()" style="width:100%; padding:15px; background:#28a745; color:white; border:none; border-radius:10px; font-weight:bold;">GUARDAR MATERIAL</button>
+    <div id="lista_inv" style="margin-top:20px;"></div>
+</div>
+
+<div id="lista_proyecto"></div>
+
+<div id="res_final" class="resumen-final" style="display:none;">
+    <h3>BALANCE ESTILO FUSION</h3>
+    <div id="detalle_costos"></div>
+    <div class="total-lps" id="gran_total"></div>
+</div>
+
+<script>
+let db = []; let proyectoActual = [];
+
+function ajustarCampos() {
+    const oficio = document.getElementById('p_oficio').value;
+    document.getElementById('detalles_metal').style.display = oficio === 'metal' ? 'block' : 'none';
+    document.getElementById('detalles_pvc_mueble').style.display = (oficio === 'pvc' || oficio === 'mueble') ? 'block' : 'none';
+    document.getElementById('detalles_elec').style.display = oficio === 'electricidad' ? 'block' : 'none';
+    document.getElementById('campos_medidas').style.display = oficio === 'electricidad' ? 'none' : 'block';
+}
+
+function guardarMaterial() {
+    const material = { id: Date.now(), nombre: document.getElementById('inv_nombre').value, tipo: document.getElementById('inv_tipo').value, precio: parseFloat(document.getElementById('inv_precio').value), unidad: parseInt(document.getElementById('inv_unidad').value) };
+    if(!material.nombre || isNaN(material.precio)) return alert("Datos incompletos");
+    db.push(material);
+    actualizarInterfaz();
+    document.getElementById('inv_nombre').value = "";
+}
+
+function actualizarInterfaz() {
+    const sM = document.getElementById('sel_marco'), sB = document.getElementById('sel_barrote'), sL = document.getElementById('sel_lamina');
+    sM.innerHTML = sB.innerHTML = sL.innerHTML = '<option value="">Seleccione...</option>';
+    db.forEach(m => {
+        const opt = `<option value="${m.id}">${m.nombre}</option>`;
+        if(m.tipo === 'Marco') sM.innerHTML += opt;
+        if(m.tipo === 'Barrote') sB.innerHTML += opt;
+        if(m.tipo === 'Lamina') sL.innerHTML += opt;
+    });
+    const lI = document.getElementById('lista_inv'); lI.innerHTML = "";
+    db.forEach((m, i) => lI.innerHTML += `<div class="lista-item">${m.nombre} (L.${m.precio}) <button class="btn-del" onclick="db.splice(${i},1);actualizarInterfaz();">X</button></div>`);
+}
+
+function agregarAlProyecto() {
+    const oficio = document.getElementById('p_oficio').value;
+    const desc = document.getElementById('p_desc').value || "Trabajo";
+    const ganP = parseFloat(document.getElementById('p_gan').value) / 100;
+    const mo = parseFloat(document.getElementById('p_mo').value) || 0;
+    let costoMat = 0, detalle = "";
+
+    if(oficio === 'metal') {
+        const m = db.find(x => x.id == document.getElementById('sel_marco').value);
+        const b = db.find(x => x.id == document.getElementById('sel_barrote').value);
+        const a = parseFloat(document.getElementById('p_ancho').value), h = parseFloat(document.getElementById('p_alto').value);
+        const grosor = parseFloat(document.getElementById('p_grosor').value), sep = parseFloat(document.getElementById('p_sep').value);
+        const nEsp = Math.round(a/sep), cantB = nEsp-1, corteB = h-(grosor*2);
+        costoMat = (Math.ceil(((a*2)+(h*2))/12/20)*m.precio) + (Math.ceil((corteB*cantB)/12/30)*b.precio);
+        detalle = `Metal: ${cantB} piezas de ${corteB.toFixed(2)}"`;
+    } else if(oficio === 'pvc' || oficio === 'mueble') {
+        const l = db.find(x => x.id == document.getElementById('sel_lamina').value);
+        const a = parseFloat(document.getElementById('p_ancho').value), h = parseFloat(document.getElementById('p_alto').value);
+        const extra = parseFloat(document.getElementById('p_extra').value);
+        costoMat = (oficio === 'pvc') ? (Math.ceil(((a*4)+(h*4))*0.0254/6)*l.precio) + extra : (Math.ceil((a*h)/(48*96))*l.precio) + extra;
+        detalle = `${oficio.toUpperCase()}: ${a}x${h}"`;
+    } else {
+        costoMat = parseInt(document.getElementById('p_cant_elec').value) * parseFloat(document.getElementById('p_precio_elec').value);
+        detalle = `Eléctrico: ${document.getElementById('p_cant_elec').value} puntos`;
+    }
+
+    const inversion = costoMat + mo;
+    proyectoActual.push({ desc, inversion: costoMat, mo, ganancia: inversion * ganP, detalle });
+    renderProyecto();
+}
+
+function renderProyecto() {
+    const cont = document.getElementById('lista_proyecto'); cont.innerHTML = "";
+    let tInv = 0, tMo = 0, tGan = 0;
+    proyectoActual.forEach((p, i) => {
+        tInv += p.inversion; tMo += p.mo; tGan += p.ganancia;
+        cont.innerHTML += `<div class="lista-item"><strong>${p.desc}</strong><br><small>${p.detalle}</small><br>Venta: L. ${(p.inversion+p.mo+p.ganancia).toLocaleString()}<button class="btn-del" onclick="proyectoActual.splice(${i},1);renderProyecto();">X</button></div>`;
+    });
+    document.getElementById('res_final').style.display = proyectoActual.length > 0 ? 'block' : 'none';
+    document.getElementById('detalle_costos').innerHTML = `<div class="res-line"><span>Materiales:</span> <span>L. ${tInv.toLocaleString()}</span></div><div class="res-line"><span>Mano de Obra:</span> <span>L. ${tMo.toLocaleString()}</span></div><div class="res-line"><span>Ganancia:</span> <span style="color:var(--dorado)">L. ${tGan.toLocaleString()}</span></div>`;
+    document.getElementById('gran_total').innerText = "TOTAL: L. " + (tInv+tMo+tGan).toLocaleString();
+}
+
+function openTab(evt, name) {
+    let card = document.getElementsByClassName("card");
+    for (let i = 0; i < card.length; i++) card[i].style.display = "none";
+    let tab = document.getElementsByClassName("tab");
+    for (let i = 0; i < tab.length; i++) tab[i].classList.remove("active");
+    document.getElementById(name).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+
+function actualizarInterfaz() {
+    const sM = document.getElementById('sel_marco'), sB = document.getElementById('sel_barrote'), sL = document.getElementById('sel_lamina');
+    sM.innerHTML = sB.innerHTML = sL.innerHTML = '<option value="">Seleccione...</option>';
+    db.forEach(m => {
+        const opt = `<option value="${m.id}">${m.nombre}</option>`;
+        if(m.tipo === 'Marco') sM.innerHTML += opt;
+        if(m.tipo === 'Barrote') sB.innerHTML += opt;
+        if(m.tipo === 'Lamina') sL.innerHTML += opt;
+    });
+    const lI = document.getElementById('lista_inv'); lI.innerHTML = "";
+    db.forEach((m, i) => lI.innerHTML += `<div class="lista-item">${m.nombre} (L.${m.precio}) <button class="btn-del" onclick="db.splice(${i},1);actualizarInterfaz();">X</button></div>`);
+}
+</script>
+</body>
+</html>
