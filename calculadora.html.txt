@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estilo Fusion - Cotizador por Grupos</title>
+    <style>
+        :root { --dorado: #b08d57; --negro: #1a1a1a; --gris: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; padding-bottom: 80px; }
+        nav { background: var(--negro); padding: 15px; text-align: center; color: var(--dorado); font-weight: bold; border-bottom: 3px solid var(--dorado); margin: -10px -10px 15px -10px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 11px; background: #ccc; }
+        .tab.active { background: var(--dorado); color: white; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; display: none; }
+        .card.active { display: block; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .full { grid-column: span 2; }
+        label { display: block; font-size: 10px; font-weight: bold; color: #555; margin-bottom: 2px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .btn-add { width: 100%; padding: 15px; background: var(--negro); color: var(--dorado); border: 2px solid var(--dorado); border-radius: 8px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .lista-item { background: white; border-left: 5px solid var(--dorado); padding: 12px; margin-bottom: 8px; border-radius: 8px; position: relative; }
+        .btn-del { position: absolute; right: 10px; top: 10px; background: #ff4444; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; }
+        .resumen-total { background: var(--negro); color: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
+        .res-line { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 8px 0; font-size: 13px; }
+        .total-lps { font-size: 24px; color: var(--dorado); text-align: center; margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav>ESTILO FUSION - PROYECTOS</nav>
+
+<div class="tabs">
+    <button class="tab active" onclick="openTab(event, 'proyectos')">PROYECTOS</button>
+    <button class="tab" onclick="openTab(event, 'inventario')">BASE DE DATOS</button>
+</div>
+
+<div id="proyectos" class="card active">
+    <h2>Añadir Piezas al Proyecto</h2>
+    <div class="grid">
+        <div class="full"><label>Descripción (Ej: Verjas Frontales)</label><input type="text" id="p_desc"></div>
+        <div class="full"><label>Cantidad de esta medida</label><input type="number" id="p_cant" value="1"></div>
+        <div><label>Ancho (pulg)</label><input type="number" id="p_ancho" value="40"></div>
+        <div><label>Alto (pulg)</label><input type="number" id="p_alto" value="40"></div>
+        <div class="full"><label>Seleccionar Marco</label><select id="sel_marco"></select></div>
+        <div class="full"><label>Grosor del Marco (pulg)</label><input type="number" id="p_grosor" step="0.1" value="1.5"></div>
+        <div class="full"><label>Seleccionar Barrote</label><select id="sel_barrote"></select></div>
+        <div><label>Separación (pulg)</label><input type="number" id="p_sep" value="5"></div>
+        <div><label>Mano de Obra (Lps por verja)</label><input type="number" id="p_mo" value="0"></div>
+    </div>
+    <button class="btn-add" onclick="agregarAlProyecto()">+ AÑADIR AL PRESUPUESTO</button>
+</div>
+
+<div id="inventario" class="card">
+    <h2>Registrar Material</h2>
+    <div class="grid">
+        <div class="full"><label>Nombre del Material</label><input type="text" id="inv_nombre" placeholder="Ej: Tubo 1x1 cal 16"></div>
+        <div><label>Tipo</label>
+            <select id="inv_tipo">
+                <option value="Marco">Para Marco</option>
+                <option value="Barrote">Para Barrote</option>
+            </select>
+        </div>
+        <div><label>Precio (Lps)</label><input type="number" id="inv_precio"></div>
+        <div class="full"><label>Medida de Compra</label>
+            <select id="inv_unidad">
+                <option value="20">Tira 20 pies</option>
+                <option value="30">Varilla 30 pies</option>
+            </select>
+        </div>
+    </div>
+    <button onclick="guardarMaterial()" style="width:100%; padding:12px; background:#28a745; color:white; border:none; border-radius:8px; margin-top:10px; font-weight:bold;">GUARDAR EN LISTA</button>
+    <hr>
+    <div id="lista_inv"></div>
+</div>
+
+<div id="lista_proyecto"></div>
+
+<div id="res_final" class="resumen-total" style="display:none;">
+    <h3>💰 Resumen de Obra Total</h3>
+    <div id="detalle_costos"></div>
+    <div class="total-lps" id="gran_total"></div>
+</div>
+
+<script>
+let db = []; 
+let proyectoActual = [];
+
+function guardarMaterial() {
+    const material = {
+        id: Date.now(),
+        nombre: document.getElementById('inv_nombre').value,
+        tipo: document.getElementById('inv_tipo').value,
+        precio: parseFloat(document.getElementById('inv_precio').value),
+        unidad: parseInt(document.getElementById('inv_unidad').value)
+    };
+    if(!material.nombre || isNaN(material.precio)) return alert("Pon nombre y precio");
+    db.push(material);
+    actualizarInterfaz();
+    document.getElementById('inv_nombre').value = "";
+}
+
+function actualizarInterfaz() {
+    const sMarco = document.getElementById('sel_marco');
+    const sBarro = document.getElementById('sel_barrote');
+    sMarco.innerHTML = '<option value="">-- Selecciona --</option>';
+    sBarro.innerHTML = '<option value="">-- Selecciona --</option>';
+    db.forEach(m => {
+        const opt = `<option value="${m.id}">${m.nombre}</option>`;
+        if(m.tipo === 'Marco') sMarco.innerHTML += opt;
+        if(m.tipo === 'Barrote') sBarro.innerHTML += opt;
+    });
+    const lInv = document.getElementById('lista_inv');
+    lInv.innerHTML = "<h4>Inventario:</h4>";
+    db.forEach((m, index) => {
+        lInv.innerHTML += `<div class="lista-item">${m.nombre} (L. ${m.precio}) <button class="btn-del" onclick="db.splice(${index},1);actualizarInterfaz();">X</button></div>`;
+    });
+}
+
+function agregarAlProyecto() {
+    const idM = document.getElementById('sel_marco').value;
+    const idB = document.getElementById('sel_barrote').value;
+    const cant = parseInt(document.getElementById('p_cant').value) || 1;
+    const grosor = parseFloat(document.getElementById('p_grosor').value);
+    
+    if(!idM) return alert("Carga materiales en Base de Datos primero");
+
+    const m = db.find(x => x.id == idM);
+    const b = db.find(x => x.id == idB);
+    const a = parseFloat(document.getElementById('p_ancho').value);
+    const h = parseFloat(document.getElementById('p_alto').value);
+    const sep = parseFloat(document.getElementById('p_sep').value);
+    const mo = parseFloat(document.getElementById('p_mo').value) || 0;
+
+    const numEsp = Math.round(a / sep);
+    const cantB = numEsp - 1;
+    const corteB = h - (grosor * 2);
+    
+    // Multiplicamos por la cantidad de verjas de este grupo
+    const piesM = ((a*2)+(h*2))/12 * cant;
+    const piesB = b ? (corteB * cantB)/12 * cant : 0;
+    
+    const costoM = Math.ceil(piesM/m.unidad) * m.precio;
+    const costoB = b ? Math.ceil(piesB/b.unidad) * b.precio : 0;
+
+    proyectoActual.push({
+        desc: document.getElementById('p_desc').value || "Pieza",
+        cant: cant,
+        costo: costoM + costoB + (mo * cant),
+        detalles: `${cant} verjas | Barrotes: ${cantB} piezas de ${corteB.toFixed(2)}"`
+    });
+    renderProyecto();
+    // Limpiar campos para la siguiente verja
+    document.getElementById('p_desc').value = "";
+    document.getElementById('p_cant').value = "1";
+}
+
+function renderProyecto() {
+    const cont = document.getElementById('lista_proyecto');
+    cont.innerHTML = "";
+    let total = 0;
+    proyectoActual.forEach((p, i) => {
+        total += p.costo;
+        cont.innerHTML += `<div class="lista-item">
+            <strong>${p.desc}</strong> (${p.cant} unidades)<br>
+            <small>${p.detalles}</small><br>
+            Subtotal: L. ${p.costo.toLocaleString()}
+            <button class="btn-del" onclick="proyectoActual.splice(${i},1);renderProyecto();">X</button>
+        </div>`;
+    });
+    document.getElementById('res_final').style.display = proyectoActual.length > 0 ? 'block' : 'none';
+    document.getElementById('gran_total').innerText = "TOTAL OBRA: L. " + total.toLocaleString();
+}
+
+function openTab(evt, name) {
+    let card = document.getElementsByClassName("card");
+    for (let i = 0; i < card.length; i++) card[i].style.display = "none";
+    let tab = document.getElementsByClassName("tab");
+    for (let i = 0; i < tab.length; i++) tab[i].classList.remove("active");
+    document.getElementById(name).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+</body>
+</html>
