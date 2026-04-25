@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Maestro - Estilo Fusion</title>
+    <style>
+        :root { --dorado: #b08d57; --negro: #1a1a1a; --gris: #f4f4f4; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 10px; padding-bottom: 50px; }
+        nav { background: var(--negro); padding: 15px; text-align: center; color: var(--dorado); font-weight: bold; border-bottom: 3px solid var(--dorado); margin: -10px -10px 15px -10px; }
+        
+        .tabs { display: flex; gap: 2px; margin-bottom: 10px; overflow-x: auto; background: #ddd; padding: 5px; border-radius: 8px; }
+        .tab { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 10px; white-space: nowrap; }
+        .tab.active { background: var(--dorado); color: white; }
+
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; display: none; }
+        .card.active { display: block; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .full { grid-column: span 2; }
+        label { display: block; font-size: 10px; font-weight: bold; color: #555; margin-bottom: 2px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+        
+        .btn-gold { width: 100%; padding: 12px; background: var(--negro); color: var(--dorado); border: 2px solid var(--dorado); border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-add { background: #28a745; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 10px; }
+
+        .lista-item { background: white; border-left: 5px solid var(--dorado); padding: 10px; margin-bottom: 5px; border-radius: 6px; position: relative; font-size: 12px; }
+        .btn-del { position: absolute; right: 8px; top: 8px; background: #ff4444; color: white; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; }
+
+        .resumen-final { background: var(--negro); color: white; padding: 20px; border-radius: 12px; margin-top: 20px; }
+        .res-line { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 6px 0; font-size: 13px; }
+        .total-box { font-size: 24px; color: var(--dorado); text-align: center; margin-top: 15px; font-weight: bold; border-top: 2px solid var(--dorado); padding-top: 10px; }
+    </style>
+</head>
+<body>
+
+<nav>ESTILO FUSION - GESTIÓN INTEGRAL</nav>
+
+<div class="tabs">
+    <button class="tab active" onclick="openTab(event, 'cotizar')">COTIZAR</button>
+    <button class="tab" onclick="openTab(event, 'inventario')">MI BASE DE DATOS</button>
+</div>
+
+<!-- SECCIÓN COTIZAR -->
+<div id="cotizar" class="card active">
+    <h2>Nueva Cotización</h2>
+    <div class="grid">
+        <div class="full"><label>Descripción del Trabajo</label><input type="text" id="job_desc" placeholder="Ej: Portón de Garaje"></div>
+        <div><label>Ancho (pulg)</label><input type="number" id="job_ancho" value="40"></div>
+        <div><label>Alto (pulg)</label><input type="number" id="job_alto" value="40"></div>
+        
+        <div class="full"><label>Material para Marco</label>
+            <select id="sel_marco"></select>
+        </div>
+        
+        <div class="full"><label>Material para Barrotes / Relleno</label>
+            <select id="sel_barrote"></select>
+        </div>
+        
+        <div><label>Sep. Deseada (pulg)</label><input type="number" id="job_sep" value="5"></div>
+        <div><label>Mano de Obra (Lps)</label><input type="number" id="job_mo" value="0"></div>
+        <div class="full"><label>Añadir Consumible</label>
+            <select id="sel_consumible"></select>
+        </div>
+    </div>
+    <button class="btn-gold" onclick="agregarProyecto()">+ AGREGAR AL PRESUPUESTO</button>
+</div>
+
+<!-- SECCIÓN BASE DE DATOS -->
+<div id="inventario" class="card">
+    <h2>Registrar Nuevo Material</h2>
+    <div class="grid">
+        <div class="full"><label>Nombre del Material (Ej: Tubo 1 1/2" cal 16)</label><input type="text" id="inv_nombre"></div>
+        <div><label>Tipo</label>
+            <select id="inv_tipo">
+                <option value="Marco">Marco (Perfil/Tubo)</option>
+                <option value="Barrote">Barrote (Varilla/Tubo)</option>
+                <option value="Consumible">Consumible (Disco/Pintura/Tornillo)</option>
+            </select>
+        </div>
+        <div><label>Precio Unitario (Lps)</label><input type="number" id="inv_precio"></div>
+        <div><label>Grosor/Ancho (pulg)</label><input type="number" id="inv_grosor" step="0.01" placeholder="Ej: 1.5"></div>
+        <div class="full"><label>Unidad de Compra</label>
+            <select id="inv_unidad">
+                <option value="20">Tira 20 pies</option>
+                <option value="30">Varilla 30 pies</option>
+                <option value="1">Unidad (Consumible)</option>
+                <option value="6">Tira 6 metros (PVC)</option>
+            </select>
+        </div>
+    </div>
+    <button class="btn-add" onclick="guardarEnBaseDeDatos()">GUARDAR EN MI BASE DE DATOS</button>
+    <hr>
+    <div id="lista_inventario"></div>
+</div>
+
+<div id="lista_cotizacion"></div>
+
+<div id="resultado_final" class="resumen-final" style="display:none;">
+    <h3>💰 Resumen de Obra</h3>
+    <div id="detalle_pago"></div>
+    <div class="total-box" id="total_final"></div>
+</div>
+
+<script>
+// --- LÓGICA DE BASE DE DATOS ---
+let db = JSON.parse(localStorage.getItem('fusion_db')) || [];
+let presupuesto = [];
+
+function guardarEnBaseDeDatos() {
+    const nuevo = {
+        id: Date.now(),
+        nombre: document.getElementById('inv_nombre').value,
+        tipo: document.getElementById('inv_tipo').value,
+        precio: parseFloat(document.getElementById('inv_precio').value),
+        grosor: parseFloat(document.getElementById('inv_grosor').value) || 0,
+        unidad: parseInt(document.getElementById('inv_unidad').value)
+    };
+    db.push(nuevo);
+    localStorage.setItem('fusion_db', JSON.stringify(db));
+    alert("Material guardado correctamente");
+    actualizarSelectores();
+    renderInventario();
+}
+
+function actualizarSelectores() {
+    const marcoS = document.getElementById('sel_marco');
+    const barroteS = document.getElementById('sel_barrote');
+    const consS = document.getElementById('sel_consumible');
+    
+    marcoS.innerHTML = '<option value="">Seleccione Marco...</option>';
+    barroteS.innerHTML = '<option value="">Seleccione Barrote...</option>';
+    consS.innerHTML = '<option value="">Seleccione Consumible...</option>';
+
+    db.forEach(m => {
+        const opt = `<option value="${m.id}">${m.nombre} - L. ${m.precio}</option>`;
+        if(m.tipo === 'Marco') marcoS.innerHTML += opt;
+        if(m.tipo === 'Barrote') barroteS.innerHTML += opt;
+        if(m.tipo === 'Consumible') consS.innerHTML += opt;
+    });
+}
+
+function renderInventario() {
+    const cont = document.getElementById('lista_inventario');
+    cont.innerHTML = "<h4>Materiales Registrados:</h4>";
+    db.forEach((m, i) => {
+        cont.innerHTML += `<div class="lista-item">${m.nombre} (${m.tipo}) <button class="btn-del" onclick="borrarDB(${i})">Eliminar</button></div>`;
+    });
+}
+
+function borrarDB(i) {
+    db.splice(i, 1);
+    localStorage.setItem('fusion_db', JSON.stringify(db));
+    actualizarSelectores();
+    renderInventario();
+}
+
+// --- LÓGICA DE COTIZACIÓN ---
+function agregarProyecto() {
+    const idMarco = document.getElementById('sel_marco').value;
+    const idBarrote = document.getElementById('sel_barrote').value;
+    
+    if(!idMarco) return alert("Selecciona un material de marco de tu base de datos");
+
+    const m = db.find(x => x.id == idMarco);
+    const b = db.find(x => x.id == idBarrote);
+    
+    const a = parseFloat(document.getElementById('job_ancho').value);
+    const h = parseFloat(document.getElementById('job_alto').value);
+    const sep = parseFloat(document.getElementById('job_sep').value);
+
+    // Lógica técnica barrotes
+    const numEsp = Math.round(a / sep);
+    const cantB = numEsp - 1;
+    const corteB = h - (m.grosor * 2);
+    
+    const piesMarco = ((a*2)+(h*2))/12;
+    const piesB = b ? (corteB * cantB)/12 : 0;
+    
+    const costoM = Math.ceil(piesMarco/m.unidad) * m.precio;
+    const costoB = b ? Math.ceil(piesB/b.unidad) * b.precio : 0;
+    const mo = parseFloat(document.getElementById('job_mo').value) || 0;
+
+    presupuesto.push({
+        desc: document.getElementById('job_desc').value,
+        costo: costoM + costoB + mo,
+        detalles: `Marco: ${m.nombre} | Barrotes: ${cantB} piezas de ${corteB}"`
+    });
+    renderCotizacion();
+}
+
+function renderCotizacion() {
+    const cont = document.getElementById('lista_cotizacion');
+    cont.innerHTML = "";
+    let total = 0;
+    presupuesto.forEach((p, i) => {
+        total += p.costo;
+        cont.innerHTML += `<div class="lista-item"><strong>${p.desc}</strong><br>${p.detalles}<br>Subtotal: L. ${p.costo}<button class="btn-del" onclick="presupuesto.splice(${i},1);renderCotizacion();">X</button></div>`;
+    });
+    document.getElementById('resultado_final').style.display = presupuesto.length > 0 ? 'block' : 'none';
+    document.getElementById('total_final').innerText = "TOTAL: L. " + total.toLocaleString();
+}
+
+function openTab(evt, name) {
+    let card = document.getElementsByClassName("card");
+    for (let i = 0; i < card.length; i++) card[i].classList.remove("active");
+    let tab = document.getElementsByClassName("tab");
+    for (let i = 0; i < tab.length; i++) tab[i].classList.remove("active");
+    document.getElementById(name).classList.add("active");
+    evt.currentTarget.classList.add("active");
+}
+
+// Iniciar
+actualizarSelectores();
+renderInventario();
+</script>
+</body>
+</html>
