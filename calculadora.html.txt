@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estilo Fusion Pro</title>
+    <style>
+        :root { --dorado: #b08d57; --madera: #8b5a2b; --negro: #0a0a0a; --negro-glass: rgba(15, 15, 15, 0.98); }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), 
+                        url('https://unsplash.com');
+            background-size: cover; background-attachment: fixed; margin: 0; padding: 15px; color: #f5f5f5; 
+        }
+
+        header { text-align: center; padding: 20px 0; }
+        .logo-img { width: 100%; max-width: 280px; filter: drop-shadow(0 0 15px rgba(176,141,87,0.4)); }
+        
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding: 5px; }
+        .tab { flex: 1; padding: 14px; border: 1px solid var(--dorado); border-radius: 14px; background: rgba(255,255,255,0.05); color: white; font-weight: bold; cursor: pointer; font-size: 10px; text-transform: uppercase; white-space: nowrap; backdrop-filter: blur(10px); }
+        .tab.active { background: var(--dorado); color: var(--negro); box-shadow: 0 0 15px var(--dorado); }
+
+        .card { background: var(--negro-glass); padding: 25px; border-radius: 25px; border: 1px solid rgba(176,141,87,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.9); margin-bottom: 20px; display: none; }
+        .card.active { display: block; animation: fadeInUp 0.4s ease; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { font-size: 14px; color: var(--dorado); border-bottom: 1px solid var(--dorado); padding-bottom: 8px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        label { display: block; font-size: 10px; font-weight: bold; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+        
+        input, select { width: 100%; padding: 15px; background: rgba(255,255,255,0.08); border: 1px solid #333; border-radius: 12px; color: white; font-size: 16px; margin-bottom: 15px; box-sizing: border-box; }
+        input:focus { border-color: var(--dorado); outline: none; background: rgba(255,255,255,0.12); }
+        
+        .btn-add { width: 100%; padding: 20px; background: linear-gradient(135deg, var(--dorado), var(--madera)); color: white; border: none; border-radius: 15px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+
+        .lista-item { background: rgba(255,255,255,0.03); border-left: 6px solid var(--dorado); padding: 20px; margin-bottom: 12px; border-radius: 15px; position: relative; border-top: 1px solid rgba(255,255,255,0.05); }
+        .btn-del { position: absolute; right: 15px; top: 15px; background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 10px; font-weight: bold; }
+
+        .resumen-final { background: linear-gradient(180deg, #111, #000); padding: 30px; border-radius: 25px; border: 2px solid var(--dorado); box-shadow: 0 0 50px rgba(176,141,87,0.2); }
+        .res-line { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #222; font-size: 14px; }
+        .total-lps { font-size: 34px; color: var(--dorado); text-align: center; margin-top: 25px; font-weight: 900; text-shadow: 0 0 15px rgba(176,141,87,0.5); }
+    </style>
+</head>
+<body>
+
+<header>
+    <!-- Enlace directo a tu archivo logo.png en GitHub -->
+    <img src="https://githubusercontent.com" class="logo-img" alt="Estilo Fusion Logo">
+</header>
+
+<div class="tabs">
+    <button class="tab active" onclick="openTab(event, 'proyectos')">COTIZAR</button>
+    <button class="tab" onclick="openTab(event, 'inventario')">BASE DE DATOS</button>
+</div>
+
+<!-- SECCIÓN PROYECTOS -->
+<div id="proyectos" class="card active">
+    <h2>Nueva Pieza / Servicio</h2>
+    <label>¿Qué estás cotizando?</label>
+    <select id="p_oficio" onchange="ajustarCampos()">
+        <option value="metal">Metal / Estructuras</option>
+        <option value="pvc">Ventanas PVC</option>
+        <option value="mueble">Muebles (Melamina/Pino)</option>
+        <option value="electricidad">Instalación Eléctrica</option>
+    </select>
+
+    <label>Descripción</label>
+    <input type="text" id="p_desc" placeholder="Ej: Portón Principal">
+
+    <div id="campos_medidas">
+        <div style="display:flex; gap:12px;">
+            <div style="flex:1"><label>Ancho (pulg)</label><input type="number" id="p_ancho" value="48"></div>
+            <div style="flex:1"><label>Alto (pulg)</label><input type="number" id="p_alto" value="48"></div>
+        </div>
+    </div>
+
+    <div id="detalles_metal">
+        <label>Material Marco</label><select id="sel_marco"></select>
+        <label>Grosor Marco (pulg)</label><input type="number" id="p_grosor" value="1.5">
+        <label>Material Barrotes</label><select id="sel_barrote"></select>
+        <label>Separación Deseada (pulg)</label><input type="number" id="p_sep" value="5">
+    </div>
+
+    <div id="detalles_pvc_mueble" style="display:none;">
+        <label>Material Principal (Tira/Lámina)</label><select id="sel_lamina"></select>
+        <label>Extras (Herrajes/Vidrio/Tornillos) Lps</label><input type="number" id="p_extra" value="0">
+    </div>
+
+    <div id="detalles_elec" style="display:none;">
+        <label>Cantidad de Puntos</label><input type="number" id="p_cant_elec" value="1">
+        <label>Costo por Punto (Material+MO)</label><input type="number" id="p_precio_elec" value="450">
+    </div>
+
+    <label>Mano de Obra adicional (Lps)</label><input type="number" id="p_mo" value="0">
+    <label>Ganancia Deseada (%)</label><input type="number" id="p_gan" value="30">
+
+    <button class="btn-add" onclick="agregarAlProyecto()">+ AÑADIR AL PRESUPUESTO</button>
+</div>
+
+<!-- SECCIÓN BASE DE DATOS -->
+<div id="inventario" class="card">
+    <h2>Registrar Material</h2>
+    <label>Nombre del Material</label><input type="text" id="inv_nombre" placeholder="Tubo 1.5 cal 16">
+    <label>Categoría</label>
+    <select id="inv_tipo">
+        <option value="Marco">Marco Metal</option>
+        <option value="Barrote">Barrote Metal</option>
+        <option value="Lamina">PVC / Láminas Madera</option>
+    </select>
+    <label>Precio Costo (Lps)</label><input type="number" id="inv_precio">
+    <label>Formato de Compra</label>
+    <select id="inv_unidad">
+        <option value="20">Tira 20ft</option>
+        <option value="30">Varilla 30ft</option>
+        <option value="1">Lámina 4x8ft / Unidad</option>
+        <option value="6">Tira PVC 6m</option>
+    </select>
+    <button onclick="guardarMaterial()" style="width:100%; padding:18px; background:#28a745; color:white; border:none; border-radius:15px; font-weight:bold; text-transform:uppercase;">Guardar en Inventario</button>
+    <div id="lista_inv" style="margin-top:25px;"></div>
+</div>
+
+<div id="lista_proyecto"></div>
+
+<div id="res_final" class="resumen-final" style="display:none;">
+    <h3 style="color:var(--dorado); text-align:center; margin-top:0; letter-spacing:2px;">BALANCE FINAL</h3>
+    <div id="detalle_costos"></div>
+    <div class="total-lps" id="gran_total"></div>
+</div>
+
+<script>
+let db = []; let proyectoActual = [];
+
+function ajustarCampos() {
+    const ofi = document.getElementById('p_oficio').value;
+    document.getElementById('detalles_metal').style.display = ofi === 'metal' ? 'block' : 'none';
+    document.getElementById('detalles_pvc_mueble').style.display = (ofi === 'pvc' || ofi === 'mueble') ? 'block' : 'none';
+    document.getElementById('detalles_elec').style.display = ofi === 'electricidad' ? 'block' : 'none';
+    document.getElementById('campos_medidas').style.display = ofi === 'electricidad' ? 'none' : 'block';
+}
+
+function guardarMaterial() {
+    const material = { id: Date.now(), nombre: document.getElementById('inv_nombre').value, tipo: document.getElementById('inv_tipo').value, precio: parseFloat(document.getElementById('inv_precio').value), unidad: parseInt(document.getElementById('inv_unidad').value) };
+    if(!material.nombre || isNaN(material.precio)) return alert("Completa los datos");
+    db.push(material);
+    actualizarInterfaz();
+    document.getElementById('inv_nombre').value = "";
+}
+
+function actualizarInterfaz() {
+    const sM = document.getElementById('sel_marco'), sB = document.getElementById('sel_barrote'), sL = document.getElementById('sel_lamina');
+    sM.innerHTML = sB.innerHTML = sL.innerHTML = '<option value="">Seleccione material...</option>';
+    db.forEach(m => {
+        const opt = `<option value="${m.id}">${m.nombre}</option>`;
+        if(m.tipo === 'Marco') sM.innerHTML += opt;
+        else if(m.tipo === 'Barrote') sB.innerHTML += opt;
+        else if(m.tipo === 'Lamina') sL.innerHTML += opt;
+    });
+    const lI = document.getElementById('lista_inv'); lI.innerHTML = "";
+    db.forEach((m, i) => lI.innerHTML += `<div class="lista-item" style="font-size:12px;">${m.nombre} (L.${m.precio}) <button class="btn-del" onclick="db.splice(${i},1);actualizarInterfaz();">X</button></div>`);
+}
+
+function agregarAlProyecto() {
+    const ofi = document.getElementById('p_oficio').value;
+    const desc = document.getElementById('p_desc').value || "Trabajo";
+    const ganP = parseFloat(document.getElementById('p_gan').value) / 100;
+    const mo = parseFloat(document.getElementById('p_mo').value) || 0;
+    let costoMat = 0, detalle = "";
+
+    try {
+        if(ofi === 'metal') {
+            const m = db.find(x => x.id == document.getElementById('sel_marco').value);
+            const b = db.find(x => x.id == document.getElementById('sel_barrote').value);
+            const a = parseFloat(document.getElementById('p_ancho').value), h = parseFloat(document.getElementById('p_alto').value);
+            const gr = parseFloat(document.getElementById('p_grosor').value), sep = parseFloat(document.getElementById('p_sep').value);
+            const nEsp = Math.round(a/sep), cantB = nEsp-1, corteB = h-(gr*2);
+            costoMat = (Math.ceil(((a*2)+(h*2))/12/20)*m.precio) + (Math.ceil((corteB*cantB)/12/30)*b.precio);
+            detalle = `${cantB} barrotes de ${corteB.toFixed(2)}"`;
+        } else if(ofi === 'pvc' || ofi === 'mueble') {
+            const l = db.find(x => x.id == document.getElementById('sel_lamina').value);
+            const a = parseFloat(document.getElementById('p_ancho').value), h = parseFloat(document.getElementById('p_alto').value);
+            const extra = parseFloat(document.getElementById('p_extra').value);
+            costoMat = (ofi === 'pvc') ? (Math.ceil(((a*4)+(h*4))*0.0254/6)*l.precio) + extra : (Math.ceil((a*h)/(48*96))*l.precio) + extra;
+            detalle = `${ofi.toUpperCase()}: ${a}x${h}"`;
+        } else {
+            costoMat = parseInt(document.getElementById('p_cant_elec').value) * parseFloat(document.getElementById('p_precio_elec').value);
+            detalle = `${document.getElementById('p_cant_elec').value} puntos eléctricos`;
+        }
+
+        const inversion = costoMat + mo;
+        proyectoActual.push({ desc, inversion: costoMat, mo, ganancia: inversion * ganP, detalle });
+        renderProyecto();
+    } catch(e) { alert("Error: Selecciona los materiales primero"); }
+}
+
+function renderProyecto() {
+    const cont = document.getElementById('lista_proyecto'); cont.innerHTML = "";
+    let tInv = 0, tMo = 0, tGan = 0;
+    proyectoActual.forEach((p, i) => {
+        tInv += p.inversion; tMo += p.mo; tGan += p.ganancia;
+        cont.innerHTML += `<div class="lista-item"><strong>${p.desc}</strong><br><small style="color:#aaa">${p.detalle}</small><br>Venta: L. ${(p.inversion+p.mo+p.ganancia).toLocaleString()}<button class="btn-del" onclick="proyectoActual.splice(${i},1);renderProyecto();">X</button></div>`;
+    });
+    document.getElementById('res_final').style.display = proyectoActual.length > 0 ? 'block' : 'none';
+    document.getElementById('detalle_costos').innerHTML = `<div class="res-line"><span>Costo Materiales:</span> <span>L. ${tInv.toLocaleString()}</span></div><div class="res-line"><span>Mano de Obra:</span> <span>L. ${tMo.toLocaleString()}</span></div><div class="res-line"><span style="color:var(--dorado)">Utilidad Libre:</span> <span style="font-weight:bold; color:var(--dorado)">L. ${tGan.toLocaleString()}</span></div>`;
+    document.getElementById('gran_total').innerText = "PRECIO TOTAL: L. " + (tInv+tMo+tGan).toLocaleString();
+}
+
+function openTab(evt, name) {
+    let card = document.getElementsByClassName("card");
+    for (let i = 0; i < card.length; i++) card[i].style.display = "none";
+    let tab = document.getElementsByClassName("tab");
+    for (let i = 0; i < tab.length; i++) tab[i].classList.remove("active");
+    document.getElementById(name).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+</script>
+</body>
+</html>
