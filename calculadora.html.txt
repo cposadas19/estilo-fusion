@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador Maestro de Verjas</title>
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .active-tab { border-bottom: 4px solid #facc15; color: #facc15; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-24 font-sans">
+
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-xl">
+        <div class="p-4 text-center border-b border-slate-800">
+            <h1 class="text-lg font-black uppercase text-yellow-400">Sistema de Producción</h1>
+        </div>
+        <nav class="flex justify-around text-[10px] uppercase py-3 font-bold tracking-widest">
+            <button onclick="showTab('calc')" id="btn-calc" class="tab-link active-tab pb-1">1. Configurar</button>
+            <button onclick="showTab('resumen')" id="btn-resumen" class="tab-link pb-1">2. Proyecto Total</button>
+            <button onclick="showTab('db')" id="btn-db" class="tab-link pb-1 text-gray-500">Precios</button>
+        </nav>
+    </header>
+
+    <main class="p-4 max-w-2xl mx-auto">
+
+        <!-- SECCIÓN 1: CONFIGURACIÓN DE VERJA -->
+        <section id="calc" class="tab-content active bg-white p-5 rounded-2xl shadow-xl">
+            <h2 class="text-xs font-bold text-gray-400 uppercase mb-4 tracking-tighter">Detalles de la estructura</h2>
+            <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Nombre de la pieza</label>
+                    <input type="text" id="v-nom" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100 focus:border-yellow-500 outline-none" placeholder="Ej: Verja de frente">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Ancho (Pulg)</label>
+                    <input type="number" id="v-ancho" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100" value="40">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Alto (Pulg)</label>
+                    <input type="number" id="v-alto" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100" value="48">
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Material de fabricación</label>
+                    <select id="v-mat" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100 select-material"></select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Separación (Pulg)</label>
+                    <input type="number" id="v-sep" class="w-full p-3 rounded-xl bg-gray-50 border-2 border-gray-100" value="5">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase">Cantidad</label>
+                    <input type="number" id="v-cant" class="w-full p-3 rounded-xl bg-blue-50 border-2 border-blue-100 font-black text-blue-700 text-center" value="1">
+                </div>
+            </div>
+            
+            <button onclick="addVerjaAlProyecto()" class="w-full bg-slate-900 text-yellow-400 font-black py-4 rounded-xl shadow-lg uppercase active:scale-95 transition-all">
+                + Añadir a la Cotización
+            </button>
+        </section>
+
+        <!-- SECCIÓN 2: RESUMEN Y MANUAL DE TALLER -->
+        <section id="resumen" class="tab-content bg-white p-5 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tighter">Resumen Total</h2>
+                <button onclick="limpiarProyecto()" class="text-[9px] bg-red-50 text-red-500 px-3 py-2 rounded-lg font-black uppercase">Vaciar</button>
+            </div>
+
+            <!-- Lista con detalles individuales -->
+            <div id="lista-verjas" class="space-y-4 mb-8"></div>
+
+            <!-- Totales de compra -->
+            <div id="totales-proyecto" class="bg-slate-900 text-white p-6 rounded-3xl space-y-4 shadow-2xl relative overflow-hidden">
+                <p class="text-center text-gray-500 italic text-xs py-4">No hay datos en el proyecto.</p>
+            </div>
+        </section>
+
+        <!-- BASE DE DATOS -->
+        <section id="db" class="tab-content bg-white p-5 rounded-2xl shadow-xl">
+            <h2 class="text-center font-black uppercase text-gray-400 text-xs mb-4 italic">Catálogo de Precios Actuales</h2>
+            <div id="tabla-db" class="text-[10px] uppercase space-y-1"></div>
+        </section>
+
+    </main>
+
+    <script>
+        const materiales = [
+            { nom: "Varilla Lisa 3/8", pre: 165 },
+            { nom: "Varilla Lisa 1/2", pre: 275 },
+            { nom: "Angulo 1 x 1/8", pre: 175 },
+            { nom: "Tubo 1 Cal. 18", pre: 230 }
+        ];
+
+        let proyecto = [];
+
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-link').forEach(l => l.classList.remove('active-tab'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('btn-' + (id === 'resumen' ? 'resumen' : id)).classList.add('active-tab');
+            if(id === 'resumen') renderResumen();
+            actualizarSelectores();
+            renderDB();
+        }
+
+        function actualizarSelectores() {
+            const s = document.querySelector('.select-material');
+            s.innerHTML = materiales.map(m => `<option value="${m.pre}">${m.nom}</option>`).join('');
+        }
+
+        function addVerjaAlProyecto() {
+            const nom = document.getElementById('v-nom').value || "Estructura " + (proyecto.length + 1);
+            const ancho = parseFloat(document.getElementById('v-ancho').value);
+            const alto = parseFloat(document.getElementById('v-alto').value);
+            const sep = parseFloat(document.getElementById('v-sep').value);
+            const cant = parseInt(document.getElementById('v-cant').value);
+            const preUnidad = parseFloat(document.getElementById('v-mat').value);
+
+            // CÁLCULOS ESPECÍFICOS
+            const largoCorte = alto - 2; // Asumiendo perfil de 1" arriba y abajo
+            const barrotesXVerja = Math.round((ancho - 2) / (sep + 1));
+            const sepFinal = (ancho - 2 - (barrotesXVerja * 1)) / (barrotesXVerja + 1);
+            
+            proyecto.push({ nom, ancho, alto, largoCorte, barrotesXVerja, cant, sepFinal, preUnidad });
+            
+            alert("✅ " + nom + " añadida correctamente.");
+            showTab('resumen');
+        }
+
+        function renderResumen() {
+            const lista = document.getElementById('lista-verjas');
+            const totales = document.getElementById('totales-proyecto');
+            
+            if(proyecto.length === 0) {
+                lista.innerHTML = "";
+                totales.innerHTML = `<p class="text-center text-gray-500 italic text-xs py-10 tracking-widest uppercase">El proyecto está vacío</p>`;
+                return;
+            }
+
+            // Renderizar cada verja con su "Manual de Taller"
+            lista.innerHTML = proyecto.map((v, i) => `
+                <div class="bg-gray-50 border-l-4 border-yellow-500 p-4 rounded-xl shadow-sm relative">
+                    <button onclick="borrarUno(${i})" class="absolute top-2 right-3 text-red-300 font-bold text-xl">×</button>
+                    <p class="font-black text-slate-800 text-sm uppercase">${v.nom} (${v.cant} pzas)</p>
+                    <div class="grid grid-cols-2 gap-y-1 mt-2 text-[11px] text-gray-600 font-medium">
+                        <p>📏 Medidas: <span class="text-slate-900">${v.ancho}" x ${v.alto}"</span></p>
+                        <p>🔪 Corte Barrote: <span class="text-red-600 font-bold">${v.largoCorte}"</span></p>
+                        <p>🔢 Barrotes por verja: <span class="text-slate-900 font-bold">${v.barrotesXVerja}</span></p>
+                        <p>↔️ Separación: <span class="text-blue-600 font-bold">${v.sepFinal.toFixed(2)}"</span></p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Totales acumulados
+            let totalPulgadas = 0;
+            let costoTotalBase = 0;
+            proyecto.forEach(v => {
+                const pulgadasEsteGrupo = (v.barrotesXVerja * v.largoCorte * v.cant);
+                totalPulgadas += pulgadasEsteGrupo;
+                costoTotalBase += (pulgadasEsteGrupo / 12) * (v.preUnidad / 19.6);
+            });
+
+            const totalPies = totalPulgadas / 12;
+            const tiras = Math.ceil(totalPies / 19.6);
+            const sobrante = (tiras * 19.6) - totalPies;
+
+            totales.innerHTML = `
+                <div class="space-y-4">
+                    <div class="border-b border-slate-700 pb-4">
+                        <p class="text-[10px] text-yellow-500 font-black uppercase tracking-widest">Lista de Compra</p>
+                        <p class="text-2xl font-black">Llevar: ${tiras} tiras (6m)</p>
+                        <p class="text-[10px] text-green-400 mt-1 uppercase font-bold italic">Sobran ${sobrante.toFixed(2)} pies de la última tira</p>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <p class="text-[10px] text-gray-400 uppercase font-bold">Costo Material Acumulado</p>
+                        <p class="text-2xl font-black text-yellow-400">L ${costoTotalBase.toFixed(2)}</p>
+                    </div>
+                    <p class="text-[9px] text-gray-500 text-center uppercase tracking-tighter">Suma de todos los cortes: ${totalPies.toFixed(1)} pies lineales</p>
+                </div>
+            `;
+        }
+
+        function renderDB() {
+            document.getElementById('tabla-db').innerHTML = materiales.map(m => `
+                <div class="flex justify-between p-2 border-b bg-gray-50">
+                    <span>${m.nom}</span> <span class="font-bold text-green-700">L ${m.pre}</span>
+                </div>
+            `).join('');
+        }
+
+        function borrarUno(i) { proyecto.splice(i, 1); renderResumen(); }
+        function limpiarProyecto() { if(confirm("¿Limpiar todo el proyecto?")) { proyecto = []; renderResumen(); } }
+        window.onload = () => { showTab('calc'); };
+    </script>
+</body>
+</html>
