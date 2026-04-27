@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizador Maestro v2</title>
+    <style>
+        :root { --primary: #b38e5d; --dark: #2c3e50; --light: #f4f4f4; --success: #28a745; --info: #17a2b8; }
+        body { font-family: sans-serif; margin: 0; background: var(--light); color: var(--dark); }
+        header { background: var(--dark); color: white; padding: 15px; text-align: center; }
+        .meta-box { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; margin-top: 10px; }
+        .tabs { display: flex; overflow-x: auto; background: #ddd; position: sticky; top: 0; z-index: 100; }
+        .tab-btn { padding: 15px; border: none; cursor: pointer; flex: 1; font-weight: bold; min-width: 100px; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .content { padding: 15px; max-width: 600px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 0.9em; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .btn-main { background: var(--primary); color: white; padding: 15px; border: none; border-radius: 5px; width: 100%; font-size: 1em; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .resaltado-verde { background: #d4edda; border-left: 5px solid var(--success); padding: 15px; margin-top: 15px; border-radius: 4px; }
+        .resaltado-azul { background: #e1f5fe; border-left: 5px solid var(--info); padding: 15px; margin-top: 10px; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0;">COTIZADOR PROFESIONAL</h2>
+    <div class="meta-box">
+        🎯 META DIARIA: 
+        <input type="text" id="meta_input" onchange="guardarMeta()" placeholder="Ej. 2 verjas terminadas" style="width: 60%; background: none; border: none; border-bottom: 1px white solid; color: white; margin:0; padding: 2px; text-align: center;">
+    </div>
+</header>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="openTab('hierro')">🏗️ METAL</button>
+    <button class="tab-btn" onclick="openTab('pvc')">🪟 PVC</button>
+    <button class="tab-btn" onclick="openTab('db')">🗄️ PRECIOS</button>
+</div>
+
+<div class="content">
+
+    <!-- PESTAÑA METAL -->
+    <div id="hierro" class="tab-content">
+        <div class="card">
+            <h3>Nueva Verja / Portón</h3>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;"><label>Ancho (Pulg)</label><input type="number" id="v_ancho" value="100"></div>
+                <div style="flex:1;"><label>Alto (Pulg)</label><input type="number" id="v_alto" value="48"></div>
+            </div>
+
+            <label>Perfil de Marco</label>
+            <select id="v_marco_select"></select>
+
+            <label>Perfil de Barrote (o Lámina)</label>
+            <select id="v_barrote_select"></select>
+
+            <label>Separación entre Barrotes (Pulg)</label>
+            <input type="number" id="v_sep" value="5">
+
+            <hr style="margin:20px 0;">
+            
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1;"><label>Mano Obra (LPS)</label><input type="number" id="v_mo" value="400"></div>
+                <div style="flex:1;"><label>Ganancia (%)</label><input type="number" id="v_utilidad" value="70"></div>
+            </div>
+
+            <button class="btn-main" onclick="añadirVerja()">+ AÑADIR A LA COTIZACIÓN</button>
+        </div>
+
+        <div id="resumen-total" style="display:none;">
+            <div class="card">
+                <h3>📊 Resumen de la Obra</h3>
+                <div id="lista_items" style="font-size: 0.9em;"></div>
+                
+                <div class="resaltado-azul" id="calculo_materiales"></div>
+                <div class="resaltado-verde" id="calculo_financiero"></div>
+                
+                <button class="btn-main" style="background:#dc3545; margin-top:20px;" onclick="nuevoProyecto()">🗑️ BORRAR Y NUEVO PROYECTO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑA BASE DE DATOS -->
+    <div id="db" class="tab-content" style="display:none;">
+        <div class="card">
+            <button class="btn-main" style="background:var(--success);" onclick="guardarDB()">💾 GUARDAR PRECIOS EN ESTE EQUIPO</button>
+            <h3>Precios de Materiales</h3>
+            <table id="tabla-materiales">
+                <thead><tr><th>Material</th><th>Precio L.</th></tr></thead>
+                <tbody id="cuerpo-mats"></tbody>
+            </table>
+            <button onclick="addFila('cuerpo-mats')" style="margin-top:5px;">+ Añadir</button>
+        </div>
+    </div>
+
+    <!-- PVC (Módulo vacío para futuro) -->
+    <div id="pvc" class="tab-content" style="display:none;"><div class="card"><h3>Cálculo PVC</h3><p>Módulo para configurar.</p></div></div>
+
+</div>
+
+<script>
+// --- BASE DE DATOS PERSISTENTE ---
+let mats = JSON.parse(localStorage.getItem('mats_v2')) || [
+    {n: "Tubo 1 cal. 18 (6 mts)", p: 230},
+    {n: "Varilla Lisa 3/8 (9 mts)", p: 165},
+    {n: "Ángulo 1 x 1/8 (6 mts)", p: 175},
+    {n: "Disco de Corte 14", p: 235}
+];
+
+let itemsProyecto = [];
+
+function cargarPagina() {
+    document.getElementById('meta_input').value = localStorage.getItem('meta_diaria') || "";
+    renderDB();
+    actualizarSelects();
+}
+
+function renderDB() {
+    const c = document.getElementById('cuerpo-mats');
+    c.innerHTML = "";
+    mats.forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="text" class="n" value="${m.n}"></td><td><input type="number" class="p" value="${m.p}"></td>`;
+        c.appendChild(tr);
+    });
+}
+
+function addFila(id) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input type="text" class="n"></td><td><input type="number" class="p"></td>`;
+    document.getElementById(id).appendChild(tr);
+}
+
+function guardarDB() {
+    mats = Array.from(document.querySelectorAll('#cuerpo-mats tr')).map(f => ({
+        n: f.querySelector('.n').value, p: parseFloat(f.querySelector('.p').value) || 0
+    }));
+    localStorage.setItem('mats_v2', JSON.stringify(mats));
+    actualizarSelects();
+    alert("Precios actualizados.");
+}
+
+function actualizarSelects() {
+    const options = mats.map((m, i) => `<option value="${i}">${m.n}</option>`).join('');
+    document.getElementById('v_marco_select').innerHTML = options;
+    document.getElementById('v_barrote_select').innerHTML = options;
+}
+
+function guardarMeta() {
+    localStorage.setItem('meta_diaria', document.getElementById('meta_input').value);
+}
+
+// --- CÁLCULOS ---
+function añadirVerja() {
+    const idMarco = document.getElementById('v_marco_select').value;
+    const idBarrote = document.getElementById('v_barrote_select').value;
+    
+    const item = {
+        ancho: parseFloat(document.getElementById('v_ancho').value),
+        alto: parseFloat(document.getElementById('v_alto').value),
+        marco: mats[idMarco],
+        barrote: mats[idBarrote],
+        sepDeseada: parseFloat(document.getElementById('v_sep').value),
+        mo: parseFloat(document.getElementById('v_mo').value),
+        ganancia: parseFloat(document.getElementById('v_utilidad').value)
+    };
+
+    itemsProyecto.push(item);
+    document.getElementById('resumen-total').style.display = 'block';
+    renderResumen();
+}
+
+function renderResumen() {
+    let totalPiesMaterial = 0;
+    let costoTotalMaterial = 0;
+    let sumaManoObra = 0;
+    let htmlItems = "";
+
+    itemsProyecto.forEach((v, i) => {
+        // Lógica de barrotes e igualación de espacios
+        const gBarrote = 1; // Pulgada de espesor promedio
+        const anchoUtil = v.ancho - 2; // Menos el marco
+        const numEspacios = Math.round(anchoUtil / (v.sepDeseada + gBarrote));
+        const numBarrotes = numEspacios - 1;
+        const sepReal = (anchoUtil - (numBarrotes * gBarrote)) / numEspacios;
+        const largoBarrote = v.alto - 2;
+
+        const piesBarrotes = (numBarrotes * largoBarrote) / 12;
+        const piesMarco = ((v.ancho * 2) + (v.alto * 2)) / 12;
+
+        totalPiesMaterial += (piesBarrotes + piesMarco);
+        sumaManoObra += v.mo;
+        
+        // Calcular costo proporcional basado en el precio del perfil de 6mts (aprox 20 pies)
+        costoTotalMaterial += ( (piesBarrotes * v.barrote.p) / 19.6 ) + ( (piesMarco * v.marco.p) / 19.6 );
+
+        htmlItems += `<b>Verja ${i+1}:</b> ${numBarrotes} pzas de ${largoBarrote}" | Espacio: ${sepReal.toFixed(2)}"<br>`;
+    });
+
+    const perfilesComprar = Math.ceil(totalPiesMaterial / 19.6);
+    
+    document.getElementById('lista_items').innerHTML = htmlItems;
+    
+    document.getElementById('calculo_materiales').innerHTML = `
+        📐 <b>CÁLCULO FÍSICO:</b><br>
+        Material total: ${totalPiesMaterial.toFixed(1)} pies lineales.<br>
+        <b>Comprar: ${perfilesComprar} perfiles aprox.</b>
+    `;
+
+    // FÓRMULA FINANCIERA: (Costo Mat + MO) / (1 - %Ganancia)
+    const costoBase = costoTotalMaterial + sumaManoObra;
+    const porcentaje = itemsProyecto[0].ganancia / 100;
+    const precioVenta = costoBase / (1 - porcentaje);
+    const gananciaReal = precioVenta - costoBase;
+
+    document.getElementById('calculo_financial').innerHTML = `
+        💰 <b>RESULTADO ECONÓMICO:</b><br>
+        Costo Materiales: L. ${costoTotalMaterial.toFixed(2)}<br>
+        Suma Mano Obra: L. ${sumaManoObra.toFixed(2)}<br>
+        ---<br>
+        <span style="font-size:1.2em;">PRECIO A COBRAR: <b>L. ${precioVenta.toFixed(2)}</b></span><br>
+        <span style="color:green;">TU GANANCIA LIMPIA: L. ${gananciaReal.toFixed(2)}</span>
+    `;
+}
+
+function nuevoProyecto() {
+    if(confirm("¿Borrar todo para un nuevo cliente?")) {
+        itemsProyecto = [];
+        document.getElementById('resumen-total').style.display = 'none';
+    }
+}
+
+function openTab(id) {
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).style.display = 'block';
+    event.currentTarget.classList.add('active');
+}
+
+window.onload = cargarPagina;
+</script>
+</body>
+</html>
