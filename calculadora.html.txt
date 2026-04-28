@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estilo Fusion - Ingeniería Pro</title>
+
+<style>
+:root { --dorado:#b08d57; --negro:#1a1a1a; --gris:#f4f4f4; }
+body { font-family:'Segoe UI'; background:var(--gris); margin:0; padding:10px; padding-bottom:100px;}
+nav { background:var(--negro); padding:15px; text-align:center; color:var(--dorado); font-weight:bold; border-bottom:3px solid var(--dorado); margin:-10px -10px 15px -10px;}
+.tabs { display:flex; gap:4px; margin-bottom:10px;}
+.tab { flex:1; padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:10px; background:#ccc;}
+.tab.active { background:var(--dorado); color:white;}
+.card { background:white; padding:15px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.1); margin-bottom:15px; display:none;}
+.card.active { display:block;}
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.full { grid-column:span 2;}
+input, select { width:100%; padding:8px; border:1px solid #ccc; border-radius:6px;}
+.btn-add { width:100%; padding:15px; background:var(--negro); color:var(--dorado); border:2px solid var(--dorado); border-radius:10px; margin-top:15px;}
+.btn-plus { background:var(--dorado); color:white; border:none; padding:8px; border-radius:6px;}
+.lista-item { background:white; border-left:5px solid var(--dorado); padding:12px; margin-bottom:8px; border-radius:10px; position:relative;}
+.btn-del { position:absolute; right:10px; top:10px; background:#ff4444; color:white; border:none;}
+</style>
+</head>
+
+<body>
+
+<nav>Estilo Fusion</nav>
+
+<div class="tabs">
+<button class="tab active" onclick="openTab(event,'proyectos')">PROYECTOS</button>
+<button class="tab" onclick="openTab(event,'pvc')">PVC</button>
+<button class="tab" onclick="openTab(event,'inventario')">BASE DE DATOS</button>
+</div>
+
+<!-- HERRERIA (igual) -->
+<div id="proyectos" class="card active">
+<div class="grid">
+
+<input id="p_desc" placeholder="Descripción" class="full">
+<input id="p_ancho" type="number" value="40">
+<input id="p_alto" type="number" value="40">
+
+<select id="sel_marco" class="full"></select>
+<input id="p_grosor" type="number" value="1.5">
+<select id="p_unit_m"><option value="20">20 ft</option><option value="30">30 ft</option></select>
+
+<select id="sel_barrote" class="full"></select>
+<input id="p_sep" type="number" value="5">
+<select id="p_unit_b"><option value="30">30 ft</option><option value="20">20 ft</option></select>
+
+<select id="sel_cons" class="full"></select>
+<input id="cons_cant" type="number" value="1">
+<button onclick="sumarConsumible()">+</button>
+
+<input id="p_mo" type="number" value="0">
+<input id="p_gan" type="number" value="30">
+<input id="p_meta" type="number" value="1">
+
+</div>
+<button onclick="agregarAlProyecto()" class="btn-add">+ AÑADIR</button>
+</div>
+
+<!-- PVC -->
+<div id="pvc" class="card">
+<div class="grid">
+
+<input id="pv_desc" placeholder="Descripción" class="full">
+<input id="pv_ancho" type="number" value="40">
+<input id="pv_alto" type="number" value="40">
+
+<select id="pv_marco" class="full"></select>
+<select id="pv_unit_m"><option value="20">20 ft</option><option value="30">30 ft</option></select>
+
+<select id="pv_hoja" class="full"></select>
+<select id="pv_unit_h"><option value="20">20 ft</option><option value="30">30 ft</option></select>
+
+<select id="pv_cons" class="full"></select>
+<input id="pv_cant" type="number" value="1">
+<button onclick="sumarConsumiblePVC()">+</button>
+
+<input id="pv_mo" type="number" value="0">
+<input id="pv_gan" type="number" value="30">
+
+</div>
+<button onclick="agregarPVC()" class="btn-add">+ AÑADIR PVC</button>
+</div>
+
+<!-- BASE -->
+<div id="inventario" class="card">
+<input id="db_n">
+<input id="db_p">
+<button onclick="guardarDB()">Guardar</button>
+<div id="db_lista_visual"></div>
+</div>
+
+<div id="lista_proyecto_visual"></div>
+
+<script>
+
+let db = JSON.parse(localStorage.getItem('fusion_db'))||[];
+let proyecto=[], carritoConsumibles=[], carritoPVC=[];
+
+function openTab(e,n){
+document.querySelectorAll('.card').forEach(x=>x.style.display='none');
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+document.getElementById(n).style.display='block';
+e.currentTarget.classList.add('active');
+}
+
+function guardarDB(){
+let n=db_n.value,p=parseFloat(db_p.value);
+if(!n||isNaN(p))return;
+db.push({id:Date.now(),n,p});
+localStorage.setItem('fusion_db',JSON.stringify(db));
+actualizarSelects();
+}
+
+function actualizarSelects(){
+['sel_marco','sel_barrote','sel_cons','pv_marco','pv_hoja','pv_cons'].forEach(id=>{
+let s=document.getElementById(id);
+if(!s)return;
+s.innerHTML='<option>--</option>';
+db.forEach(m=>s.innerHTML+=`<option value="${m.id}">${m.n}</option>`);
+});
+}
+
+function sumarConsumible(){
+let m=db.find(x=>x.id==sel_cons.value);
+if(m)carritoConsumibles.push({...m,c:cons_cant.value});
+}
+
+function sumarConsumiblePVC(){
+let m=db.find(x=>x.id==pv_cons.value);
+if(m)carritoPVC.push({...m,c:pv_cant.value});
+}
+
+function agregarAlProyecto(){
+let m=db.find(x=>x.id==sel_marco.value);
+if(!m)return;
+
+let a=p_ancho.value,h=p_alto.value,gr=p_grosor.value,sep=p_sep.value;
+
+let cant=Math.round(a/sep)-1;
+let corte=h-(gr*2);
+
+proyecto.push({
+desc:p_desc.value,
+mats:[
+{id:m.id,n:m.n,p:m.p,u:p_unit_m.value,pies:((a*2)+(h*2))/12}
+],
+cons:[...carritoConsumibles],
+info:`${cant} barrotes`
+});
+
+renderProyecto();
+}
+
+function agregarPVC(){
+let m=db.find(x=>x.id==pv_marco.value);
+if(!m)return;
+
+let a=pv_ancho.value,h=pv_alto.value;
+
+proyecto.push({
+desc:pv_desc.value,
+mats:[
+{id:m.id,n:m.n,p:m.p,u:pv_unit_m.value,pies:((a*2)+(h*2))/12}
+],
+cons:[...carritoPVC],
+info:"PVC"
+});
+
+renderProyecto();
+}
+
+function renderProyecto(){
+let l=document.getElementById('lista_proyecto_visual');
+l.innerHTML="";
+proyecto.forEach(p=>{
+l.innerHTML+=`<div class="lista-item">${p.desc}</div>`;
+});
+}
+
+actualizarSelects();
+
+</script>
+
+</body>
+</html>
