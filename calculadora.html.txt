@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estilo Fusion PRO</title>
+
+<style>
+:root { --dorado:#b08d57; --negro:#1a1a1a; --gris:#f4f4f4; }
+
+body { font-family: 'Segoe UI'; background: var(--gris); margin:0; padding:10px; }
+nav { background: var(--negro); color:var(--dorado); padding:15px; text-align:center; font-weight:bold; }
+
+.tabs { display:flex; gap:5px; margin:10px 0; }
+.tab { flex:1; padding:10px; border:none; background:#ccc; cursor:pointer; }
+.tab.active { background:var(--dorado); color:white; }
+
+.card { display:none; background:white; padding:15px; border-radius:10px; }
+.card.active { display:block; }
+
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+
+input, select { width:100%; padding:8px; }
+
+.btn { padding:10px; width:100%; margin-top:10px; }
+
+.item { background:white; padding:10px; margin-top:8px; border-left:4px solid var(--dorado); }
+
+.resumen { background:var(--negro); color:white; padding:15px; margin-top:10px; border-radius:10px; }
+.total { color:var(--dorado); font-size:20px; text-align:center; }
+
+</style>
+</head>
+
+<body>
+
+<nav>ESTILO FUSION PRO</nav>
+
+<div class="tabs">
+<button class="tab active" onclick="tab('proy')">PROYECTO</button>
+<button class="tab" onclick="tab('db')">BASE</button>
+<button class="tab" onclick="tab('fact')">FACTURA</button>
+</div>
+
+<div id="proy" class="card active">
+<div class="grid">
+
+<input id="desc" placeholder="Descripción">
+
+<input id="ancho" type="number" placeholder="Ancho (pulg)">
+<input id="alto" type="number" placeholder="Alto (pulg)">
+
+<select id="marco"></select>
+<select id="barrote"></select>
+
+<input id="sep" type="number" value="5" placeholder="Separación">
+<input id="grosor" type="number" value="1.5" placeholder="Grosor">
+
+<input id="mo" type="number" placeholder="Mano de obra">
+<input id="gan" type="number" value="30" placeholder="% Ganancia">
+
+<input id="meta" type="number" value="1" placeholder="Meta diaria">
+<input id="ayudante" type="number" value="0" placeholder="Ayudante diario">
+
+<label><input id="usarLamina" type="checkbox"> Usar lámina</label>
+
+</div>
+
+<button class="btn" onclick="agregar()">Agregar</button>
+<button class="btn" onclick="resetDB()">Reiniciar Base</button>
+</div>
+
+<div id="db" class="card">
+<input id="n" placeholder="Material">
+<input id="p" type="number" placeholder="Precio">
+<button onclick="guardar()">Guardar</button>
+<div id="listaDB"></div>
+</div>
+
+<div id="fact" class="card">
+<div id="factura"></div>
+</div>
+
+<div id="lista"></div>
+
+<div id="resumen" class="resumen" style="display:none;">
+<div id="detalle"></div>
+<div class="total" id="total"></div>
+</div>
+
+<script>
+
+let db = JSON.parse(localStorage.getItem('db'))||[];
+let proyectos=[];
+
+function init(){
+if(!db.length){
+
+db=[
+
+// VARILLA
+{id:1,n:"Varilla 3/8 9m",p:165,tipo:"perfil",u:30},
+{id:2,n:"Varilla 1/2 9m",p:275,tipo:"perfil",u:30},
+
+// ANGULOS
+{id:3,n:"Ángulo 1 x 1/8",p:175,tipo:"perfil",u:20},
+{id:4,n:"Ángulo 1 x 3/16",p:265,tipo:"perfil",u:20},
+{id:5,n:"Ángulo 1 x 1/4",p:340,tipo:"perfil",u:20},
+
+{id:6,n:"Ángulo 1 1/4 x 1/8",p:230,tipo:"perfil",u:20},
+{id:7,n:"Ángulo 1 1/4 x 3/16",p:335,tipo:"perfil",u:20},
+{id:8,n:"Ángulo 1 1/4 x 1/4",p:415,tipo:"perfil",u:20},
+
+{id:9,n:"Ángulo 1 1/2 x 1/8",p:285,tipo:"perfil",u:20},
+{id:10,n:"Ángulo 1 1/2 x 3/16",p:410,tipo:"perfil",u:20},
+{id:11,n:"Ángulo 1 1/2 x 1/4",p:495,tipo:"perfil",u:20},
+
+{id:12,n:"Ángulo 2 x 1/8",p:360,tipo:"perfil",u:20},
+{id:13,n:"Ángulo 2 x 3/16",p:545,tipo:"perfil",u:20},
+{id:14,n:"Ángulo 2 x 1/4",p:715,tipo:"perfil",u:20},
+
+// PLATINAS
+{id:20,n:"Platina 1 x 1/8",p:135,tipo:"perfil",u:20},
+{id:21,n:"Platina 1 x 3/16",p:195,tipo:"perfil",u:20},
+{id:22,n:"Platina 1 x 1/4",p:260,tipo:"perfil",u:20},
+
+{id:23,n:"Platina 2 x 1/8",p:270,tipo:"perfil",u:20},
+{id:24,n:"Platina 2 x 3/16",p:395,tipo:"perfil",u:20},
+{id:25,n:"Platina 2 x 1/4",p:460,tipo:"perfil",u:20},
+
+// TUBOS
+{id:30,n:"Tubo 1/2 cal 18",p:160,tipo:"perfil",u:20},
+{id:31,n:"Tubo 1/2 cal 16",p:210,tipo:"perfil",u:20},
+{id:32,n:"Tubo 1/2 cal 14",p:255,tipo:"perfil",u:20},
+
+{id:33,n:"Tubo 1 cal 18",p:230,tipo:"perfil",u:20},
+{id:34,n:"Tubo 1 cal 16",p:300,tipo:"perfil",u:20},
+{id:35,n:"Tubo 1 cal 14",p:390,tipo:"perfil",u:20},
+
+{id:36,n:"Tubo 2 cal 18",p:470,tipo:"perfil",u:20},
+{id:37,n:"Tubo 2 cal 16",p:620,tipo:"perfil",u:20},
+{id:38,n:"Tubo 2 cal 14",p:810,tipo:"perfil",u:20},
+
+// LÁMINA
+{id:100,n:"Lamina 4x8",p:1650,tipo:"lamina",u:32},
+
+// PLYWOOD
+{id:110,n:"Plywood 1/2",p:1135,tipo:"lamina",u:32},
+
+// QUIMICOS
+{id:120,n:"Galon Anticorrosiva",p:1050,tipo:"consumible"},
+{id:121,n:"Galon Esmalte",p:1165,tipo:"consumible"},
+{id:122,n:"Thinner",p:245,tipo:"consumible"},
+
+// CONSUMIBLES
+{id:130,n:"Electrodo 1/8",p:68,tipo:"consumible"},
+{id:131,n:"Disco corte 14",p:235,tipo:"consumible"}
+
+];
+
+localStorage.setItem('db',JSON.stringify(db));
+}
+
+renderDB();
+renderSel();
+}
+
+function resetDB(){
+localStorage.clear();
+location.reload();
+}
+
+function renderSel(){
+let m=document.getElementById('marco');
+let b=document.getElementById('barrote');
+m.innerHTML="<option>Marco</option>";
+b.innerHTML="<option>Barrote</option>";
+
+db.forEach(x=>{
+if(x.tipo==="perfil"){
+m.innerHTML+=`<option value="${x.id}">${x.n}</option>`;
+b.innerHTML+=`<option value="${x.id}">${x.n}</option>`;
+}
+});
+}
+
+function guardar(){
+db.push({id:Date.now(),n:n.value,p:parseFloat(p.value),tipo:"perfil",u:20});
+localStorage.setItem('db',JSON.stringify(db));
+renderDB(); renderSel();
+}
+
+function renderDB(){
+let l=document.getElementById('listaDB'); l.innerHTML="";
+db.forEach(x=>l.innerHTML+=`<div>${x.n} L.${x.p}</div>`);
+}
+
+function agregar(){
+
+let a=+ancho.value, h=+alto.value;
+let sep=+sep.value, gr=+grosor.value;
+
+let m=db.find(x=>x.id==marco.value);
+let b=db.find(x=>x.id==barrote.value);
+
+let cant=Math.round(a/sep)-1;
+let largo=h-(gr*2);
+
+proyectos.push({
+desc:desc.value,
+cant,largo,
+meta:+meta.value,
+ayudante:+ayudante.value,
+gan:+gan.value,
+mo:+mo.value,
+marco:m,bar:b,
+usarLamina:usarLamina.checked,
+area:(a*h)/144
+});
+
+render();
+}
+
+function render(){
+
+let sobrantes={};
+let total=0, totalSin=0;
+let html="", fact="";
+
+proyectos.forEach((p,i)=>{
+
+let costo=0;
+
+[p.marco,p.bar].forEach(mat=>{
+if(!mat) return;
+
+let pies=(p.cant*p.largo)/12;
+
+if(!sobrantes[mat.id]) sobrantes[mat.id]=0;
+
+let sin=Math.ceil(pies/mat.u)*mat.p;
+totalSin+=sin;
+
+if(sobrantes[mat.id]>=pies){
+sobrantes[mat.id]-=pies;
+pies=0;
+}else{
+pies-=sobrantes[mat.id];
+sobrantes[mat.id]=0;
+}
+
+if(pies>0){
+let perf=Math.ceil(pies/mat.u);
+costo+=perf*mat.p;
+sobrantes[mat.id]+=(perf*mat.u)-pies;
+}
+
+});
+
+// LAMINA
+if(p.usarLamina){
+let lam=db.find(x=>x.tipo==="lamina");
+let piezas=Math.ceil(p.area/32);
+costo+=piezas*lam.p;
+totalSin+=piezas*lam.p;
+}
+
+let venta=costo+(costo*(p.gan/100))+p.mo;
+let diaria=(venta*p.meta)-p.ayudante;
+
+total+=venta;
+
+html+=`
+<div class="item">
+<b>${p.desc}</b><br>
+Barrotes: ${p.cant} | Largo: ${p.largo.toFixed(2)}<br>
+Meta: ${p.meta}<br>
+💰 Diario: L ${diaria.toFixed(2)}
+</div>
+`;
+
+fact+=`${p.desc} - L ${venta.toFixed(2)}<br>`;
+
+});
+
+document.getElementById('lista').innerHTML=html;
+
+document.getElementById('resumen').style.display="block";
+document.getElementById('detalle').innerHTML=`
+Costo sin optimizar: L ${totalSin.toFixed(2)}<br>
+Venta: L ${total.toFixed(2)}<br>
+Ahorro: L ${(totalSin-total).toFixed(2)}
+`;
+
+document.getElementById('total').innerText="TOTAL: L "+total.toFixed(2);
+
+document.getElementById('factura').innerHTML=fact;
+
+}
+
+function tab(id){
+document.querySelectorAll('.card').forEach(x=>x.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+
+init();
+
+</script>
+
+</body>
+</html>
