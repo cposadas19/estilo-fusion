@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estilo Fusion PRO</title>
+
+<style>
+:root { --dorado:#b08d57; --negro:#1a1a1a; --gris:#f4f4f4; }
+body { font-family:Segoe UI; background:var(--gris); margin:0; padding:10px;}
+nav { background:var(--negro); color:var(--dorado); padding:15px; text-align:center; font-weight:bold;}
+.card { background:white; padding:15px; border-radius:10px; margin-bottom:10px;}
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+label { font-size:12px; font-weight:bold;}
+input,select { width:100%; padding:8px;}
+.btn { margin-top:10px; padding:10px; width:100%;}
+.item { background:white; padding:10px; margin-top:8px; border-left:4px solid var(--dorado);}
+.resumen { background:var(--negro); color:white; padding:15px; border-radius:10px;}
+</style>
+</head>
+
+<body>
+
+<nav>ESTILO FUSION PRO</nav>
+
+<!-- BASE DE DATOS -->
+<div class="card">
+<h3>Base de Datos</h3>
+
+<label>Nombre</label>
+<input id="db_nombre">
+
+<label>Precio</label>
+<input id="db_precio" type="number">
+
+<label>Tipo</label>
+<select id="db_tipo">
+<option value="perfil">Perfil</option>
+<option value="lamina">Lámina</option>
+<option value="consumible">Consumible</option>
+</select>
+
+<label>Largo unidad (pies)</label>
+<input id="db_unidad" value="20">
+
+<button class="btn" onclick="agregarMaterial()">Agregar Material</button>
+
+<div id="db_lista"></div>
+
+<button class="btn" onclick="resetDB()">Reiniciar Base</button>
+</div>
+
+<!-- TIPO -->
+<div class="card">
+<label>Tipo de trabajo</label>
+<select id="tipoProyecto" onchange="cambiarModulo()">
+<option value="herreria">Herrería</option>
+<option value="mueble">Mueble</option>
+<option value="pvc">PVC</option>
+<option value="electrico">Eléctrico</option>
+</select>
+</div>
+
+<!-- HERRERIA -->
+<div id="mod_herreria" class="card grid">
+<label>Descripción</label><input id="desc">
+<label>Ancho</label><input id="ancho">
+<label>Alto</label><input id="alto">
+<label>Marco</label><select id="marco"></select>
+<label>Barrote</label><select id="barrote"></select>
+<label>Separación</label><input id="sep" value="5">
+<label>Grosor</label><input id="grosor" value="1.5">
+<label>Usar lámina</label><input type="checkbox" id="usarLamina">
+</div>
+
+<!-- MUEBLE -->
+<div id="mod_mueble" class="card grid" style="display:none;">
+<label>Descripción</label><input id="m_desc">
+<label>Ancho</label><input id="m_ancho">
+<label>Alto</label><input id="m_alto">
+<label>Material</label><select id="m_mat"></select>
+</div>
+
+<!-- PVC -->
+<div id="mod_pvc" class="card grid" style="display:none;">
+<label>Descripción</label><input id="pvc_desc">
+<label>Ancho</label><input id="pvc_ancho">
+<label>Alto</label><input id="pvc_alto">
+<label>Perfil Marco</label><select id="pvc_marco"></select>
+<label>Perfil Hoja</label><select id="pvc_hoja"></select>
+<label>Rodos</label><select id="pvc_rodos"></select>
+</div>
+
+<!-- ELECTRICO -->
+<div id="mod_electrico" class="card grid" style="display:none;">
+<label>Descripción</label><input id="e_desc">
+<label>Puntos</label><input id="e_puntos">
+</div>
+
+<!-- NEGOCIO -->
+<div class="card grid">
+<label>Mano de obra</label><input id="mo">
+<label>% Ganancia</label><input id="gan" value="30">
+<label>Meta diaria</label><input id="meta" value="1">
+<label>Costo ayudante</label><input id="ayudante" value="0">
+</div>
+
+<button class="btn" onclick="agregar()">AGREGAR PROYECTO</button>
+
+<div id="lista"></div>
+
+<div id="resumen" class="resumen" style="display:none;">
+<div id="detalle"></div>
+</div>
+
+<script>
+
+let db = JSON.parse(localStorage.getItem('db')) || [];
+let proyectos = [];
+
+function init(){
+if(!db.length){
+
+db=[
+{id:1,n:"Tubo 1 cal 16",p:300,tipo:"perfil",u:20},
+{id:2,n:"Tubo 2 cal 14",p:810,tipo:"perfil",u:20},
+{id:3,n:"Lámina 2mm",p:1650,tipo:"lamina",u:32},
+{id:4,n:"Lámina 3mm",p:2550,tipo:"lamina",u:32},
+{id:5,n:"Plywood 12mm",p:1135,tipo:"lamina",u:32},
+{id:6,n:"Electrodo 1/8",p:68,tipo:"consumible"},
+{id:7,n:"Rodos PVC",p:250,tipo:"consumible"}
+];
+
+localStorage.setItem('db', JSON.stringify(db));
+}
+
+llenarSelects();
+renderDB();
+}
+
+function agregarMaterial(){
+let n=db_nombre.value;
+let p=parseFloat(db_precio.value);
+let tipo=db_tipo.value;
+let u=parseFloat(db_unidad.value);
+
+if(!n || isNaN(p)) return;
+
+db.push({id:Date.now(),n,p,tipo,u});
+
+localStorage.setItem('db', JSON.stringify(db));
+
+db_nombre.value="";
+db_precio.value="";
+
+llenarSelects();
+renderDB();
+}
+
+function renderDB(){
+let html="";
+db.forEach((m,i)=>{
+html+=`<div class="item">${m.n} - L ${m.p} (${m.tipo}) 
+<button onclick="eliminarMaterial(${i})">X</button></div>`;
+});
+db_lista.innerHTML=html;
+}
+
+function eliminarMaterial(i){
+db.splice(i,1);
+localStorage.setItem('db', JSON.stringify(db));
+renderDB();
+llenarSelects();
+}
+
+function llenarSelects(){
+let perfiles=db.filter(x=>x.tipo=="perfil");
+let laminas=db.filter(x=>x.tipo=="lamina");
+let cons=db.filter(x=>x.tipo=="consumible");
+
+[marco,barrote,pvc_marco,pvc_hoja].forEach(sel=>{
+sel.innerHTML="";
+perfiles.forEach(m=>sel.innerHTML+=`<option value="${m.id}">${m.n}</option>`);
+});
+
+m_mat.innerHTML="";
+laminas.forEach(m=>m_mat.innerHTML+=`<option value="${m.id}">${m.n}</option>`);
+
+pvc_rodos.innerHTML="";
+cons.forEach(m=>pvc_rodos.innerHTML+=`<option value="${m.id}">${m.n}</option>`);
+}
+
+function cambiarModulo(){
+["herreria","mueble","pvc","electrico"].forEach(x=>{
+document.getElementById("mod_"+x).style.display="none";
+});
+document.getElementById("mod_"+tipoProyecto.value).style.display="grid";
+}
+
+function agregar(){
+
+let tipo=tipoProyecto.value;
+let costo=0;
+
+if(tipo=="herreria"){
+let a=+ancho.value,h=+alto.value,sep=+sep.value,gr=+grosor.value;
+let bar=db.find(x=>x.id==barrote.value);
+let cant=Math.round(a/sep)-1;
+let largo=h-(gr*2);
+let pies=(cant*largo)/12;
+costo+=Math.ceil(pies/bar.u)*bar.p;
+
+if(usarLamina.checked){
+let area=(a*h)/144;
+let lam=db.find(x=>x.tipo=="lamina");
+costo+=Math.ceil(area/32)*lam.p;
+}
+}
+
+if(tipo=="mueble"){
+let area=(m_ancho.value*m_alto.value)/144;
+let mat=db.find(x=>x.id==m_mat.value);
+costo+=Math.ceil(area/32)*mat.p;
+}
+
+if(tipo=="pvc"){
+let a=+pvc_ancho.value,h=+pvc_alto.value;
+let per=(a*2+h*2)/12;
+let marco=db.find(x=>x.id==pvc_marco.value);
+let hoja=db.find(x=>x.id==pvc_hoja.value);
+costo+=(Math.ceil(per/marco.u)*marco.p);
+costo+=(Math.ceil(per/hoja.u)*hoja.p);
+costo+=db.find(x=>x.id==pvc_rodos.value).p;
+}
+
+if(tipo=="electrico"){
+costo+=e_puntos.value*150;
+}
+
+let venta=costo+(costo*(gan.value/100))+ +mo.value;
+let diaria=(venta*meta.value)-ayudante.value;
+
+proyectos.push({desc:(desc.value||m_desc.value||pvc_desc.value||e_desc.value),costo});
+
+render(venta,diaria);
+}
+
+function render(venta,diaria){
+let html="",total=0;
+proyectos.forEach(p=>{
+html+=`<div class="item">${p.desc} - L ${p.costo}</div>`;
+total+=p.costo;
+});
+lista.innerHTML=html;
+
+resumen.style.display="block";
+detalle.innerHTML=`Total: L ${total}<br>Venta: L ${venta}<br>Ganancia diaria: L ${diaria}`;
+}
+
+function resetDB(){
+localStorage.clear();
+location.reload();
+}
+
+init();
+
+</script>
+
+</body>
+</html>
