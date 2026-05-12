@@ -539,7 +539,43 @@ return;
 
 }
 
-alert('Proyecto agregado correctamente 😄');
+const tipo =
+document.getElementById('p_tipo').value;
+
+const ancho =
+parseFloat(document.getElementById('p_ancho').value);
+
+const alto =
+parseFloat(document.getElementById('p_alto').value);
+
+const cantidad =
+parseFloat(document.getElementById('p_cantidad').value);
+
+const largoPerfil =
+parseFloat(document.getElementById('perfil_largo').value);
+
+for(let i=0;i<cantidad;i++){
+
+proyectos.push({
+
+desc: descripcion,
+
+tipo,
+ancho,
+alto,
+largoPerfil,
+
+insumos:[...carritoConsumibles]
+
+});
+
+}
+
+carritoConsumibles = [];
+
+renderBadges();
+
+renderProyecto();
 
 }
 
