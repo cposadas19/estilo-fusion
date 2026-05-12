@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Panel Taller</title>
+
+<style>
+
+:root{
+--dorado:#b08d57;
+--negro:#111;
+--gris:#f4f4f4;
+}
+
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:var(--gris);
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:20px;
+box-sizing:border-box;
+}
+
+.panel{
+
+width:100%;
+max-width:450px;
+
+background:white;
+
+border-radius:20px;
+
+padding:25px;
+
+box-shadow:
+0 10px 30px rgba(0,0,0,0.15);
+
+}
+
+.logo{
+
+text-align:center;
+font-size:30px;
+font-weight:bold;
+color:var(--negro);
+
+}
+
+.sub{
+
+text-align:center;
+color:#666;
+margin-top:5px;
+margin-bottom:30px;
+font-size:14px;
+
+}
+
+.btn{
+
+display:block;
+
+width:100%;
+
+padding:18px;
+
+margin-bottom:15px;
+
+background:var(--negro);
+
+color:var(--dorado);
+
+text-decoration:none;
+
+text-align:center;
+
+font-size:18px;
+
+font-weight:bold;
+
+border-radius:14px;
+
+border:2px solid var(--dorado);
+
+box-sizing:border-box;
+
+transition:0.2s;
+
+}
+
+.btn:active{
+
+transform:scale(0.98);
+
+}
+
+.footer{
+
+text-align:center;
+font-size:11px;
+color:#888;
+margin-top:20px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="panel">
+
+<div class="logo">
+ESTILO FUSIÓN
+</div>
+
+<div class="sub">
+Panel interno de calculadoras
+</div>
+
+<a class="btn"
+href="calculadora.html">
+
+HERRERÍA
+
+</a>
+
+<a class="btn"
+href="pvc.html">
+
+PVC
+
+</a>
+
+<div class="footer">
+
+Sistema interno de cálculo y cotización
+
+</div>
+
+</div>
+
+</body>
+</html>
